@@ -1,0 +1,30 @@
+# pyproject.toml
+
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires      = [
+    "setuptools>=65.6.3", 
+    "wheel"
+]
+
+
+[project]
+authors         = [{ name = "Will Chen" }]
+classifiers     = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dependencies    = ["semantic-version==2.9.0", ]
+description     = "This is a deployer"
+license         = { file = "LICENSE" }
+name            = "dropforge"
+keywords        = ["deploy", "deployment", ]
+readme          = "README.md"
+requires-python = ">=3.10.4"
+version         = "0.0.0"
+
+
+[project.urls]
+Homepage = "https://github.com/WillemRvX/dropforge"
