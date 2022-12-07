@@ -10,13 +10,16 @@ requires      = [
 
 
 [project]
-authors         = [{ name = "Will Chen" }]
+authors         = [{ name = "Will Chen", email = "nowhere@na.com" }]
 classifiers     = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
-dependencies    = ["semantic-version==2.9.0", ]
+dependencies    = [
+    "PyYAML>=6.0", 
+    "semantic-version>=2.10.0", 
+]
 description     = "This is a deployer"
 license         = { file = "LICENSE" }
 name            = "dropforge"

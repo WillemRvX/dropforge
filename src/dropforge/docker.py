@@ -75,9 +75,10 @@ def dockerit(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) ->
         )
 
 
-def common_steps(registry: str, repo: str, gitsha: str) -> dict:
+def common_steps(registry: str, repo: str, gitsha: str=str()) -> dict:
 
-    aws_id = registry.split('.') if registry.find('erc') != - 1 else str()
+    aws_id = registry.split('.')[0] if registry.find('erc') != - 1 else str()
+    gcped = True if registry.find('gcr') != -1 else False
 
     def registries(reg: str) -> callable:
         if aws_id:
@@ -85,6 +86,20 @@ def common_steps(registry: str, repo: str, gitsha: str) -> dict:
                 aws_id,
                 registry, 
                 repo
+            )
+
+    def tag_maker(img_tag: str, proj_id: str=str()) -> str:
+        if aws_id:
+            return (
+                f'{registry}/{repo}:{img_tag}-{gitsha[0:10]}' 
+                if gitsha 
+                else f'{registry}/{repo}:{img_tag}'
+            )
+        if gcped:
+            return (
+                f'{registry}/{proj_id}/{img_tag}-{gitsha[0:10]}' 
+                if gitsha 
+                else f'{registry}/{proj_id}/{img_tag}'
             )
 
     def up_version(img_tag: str, registry: str) -> bool:
@@ -111,19 +126,16 @@ def common_steps(registry: str, repo: str, gitsha: str) -> dict:
 
     def base(img_tag: str) -> None:
         dockerit(
-            f'{registry}/{repo}:{img_tag}-{gitsha[0:10]}' 
-            if gitsha 
-            else f'{registry}/{repo}:{img_tag}',
+            tag_maker(img_tag),
             '.',
             aws_id
         )
 
     def prod(img_tag: str, build_path: str, *args) -> None:
-        tag = f'{registry}/{repo}:{img_tag}'
         nodice = 'Same version...  Not dockering it...'
         if up_version(img_tag, registry):
             dockerit(
-                tag,
+                tag_maker(img_tag),
                 build_path,
                 aws_id
             )
@@ -133,9 +145,8 @@ def common_steps(registry: str, repo: str, gitsha: str) -> dict:
     def dev_qa(img_tag: str, build_path: str, build_img: bool) -> None:
         no_build = 'Not building the image...'
         if build_img:
-            tag = f'{registry}/{repo}:{img_tag}-{gitsha[0:10]}'
             dockerit(
-                tag,
+                tag_maker(img_tag),
                 build_path,
                 aws_id,
                 gitsha[0:10]
@@ -151,17 +162,17 @@ def common_steps(registry: str, repo: str, gitsha: str) -> dict:
     )
 
 
-def proc_forgeconf(
+def proc_conf(
     path: str,
-    build_path: str,
+    buildpath: str,
     run_env: callable,
     env: str
 ) -> None:
-    with open(path) as hawk:
-        conf = yaml.safe_load(hawk)
+    with open(path) as forge:
+        conf = yaml.safe_load(forge)
         run_env[env](
             conf['image_tag'],
-            build_path,
+            buildpath,
             conf.get(f'build_deploy_{env}')
         )
 
@@ -171,8 +182,8 @@ def build_baseimage(
     registry: str,
     repo: str,
     ver: str,
-    env: str = str(),
-    github_sha: str = str(),
+    env: str=str(),
+    github_sha: str=str(),
     *args
 ) -> None:
     common_steps(registry, repo, github_sha)['base'](
@@ -181,6 +192,25 @@ def build_baseimage(
 
 
 def build_image(
+    dir: str,
+    env: str,
+    registry: str,
+    repo: str,
+    github_sha: str
+) -> None:
+    proc_conf(
+        path=f'{dir}/forge.yaml',
+        buildpath=dir,
+        run_env=common_steps(
+            registry,
+            repo,
+            github_sha
+        ),
+        env=env
+    )
+
+
+def build_img_nested(
     env: str,
     registry: str,
     repo: str,
@@ -189,9 +219,9 @@ def build_image(
 ) -> None:
     for p in os.listdir(root):
         build_path = f'{root}/{p}'
-        proc_forgeconf(
+        proc_conf(
             path=f'{build_path}/forge.yaml',
-            build_path=build_path,
+            buildpath=build_path,
             run_env=common_steps(
                 registry,
                 repo,
@@ -199,4 +229,3 @@ def build_image(
             ),
             env=env
         )
-

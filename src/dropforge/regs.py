@@ -21,7 +21,7 @@ Splitter = namedtuple(
 )
 
 
-def ecr_img_list(aws_id: str, registry: str, repo: str) -> list:
+def ecr_img_list(aws_id: str, repo: str) -> list:
     ecr = boto3.client('ecr', config=boto_conf())
     resp = ecr.list_images(
         registryId=aws_id,
