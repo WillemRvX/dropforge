@@ -8,7 +8,10 @@ from importlib.metadata import version
 from subprocess import Popen, CalledProcessError
 
 from semantic_version import Version as semver
-from regs import ecr_img_list, SPLITS
+from dropforge.tagpath import TagPath
+
+
+FORGE, SPLITS = 'forge.yaml', '-'
 
 
 def popen(comm: list) -> bool:
@@ -30,7 +33,7 @@ def build(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) -> bo
     ]
     comm.extend([
         '--build-arg',
-        f'_VERSION_={version("")}',
+        f'_BASE_IMG_VERSION_={version("")}',
     ])
     if aws_id:
         comm.extend([
@@ -75,54 +78,43 @@ def dockerit(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) ->
         )
 
 
-def common_steps(registry: str, repo: str, gitsha: str=str()) -> dict:
+def up_version(img_tag: str, tags: list) -> bool:
+    name, curr_ver = img_tag.split(SPLITS)
+    if tags:
+        semvers = list(t.semver for t in tags if t.name == name)
+        try:
+            latest = sorted(
+                semvers,
+                key=StrictVersion
+            )[-1]
+        except IndexError:
+            latest = '0.0.0'
+    else:
+        latest = '0.0.0'
+    if semver(curr_ver) == semver('0.0.0'):
+        return True
+    if semver(curr_ver) > semver(latest):
+        return True
+    return False
+
+
+def build_steps(registry: str, repo: str, tags: list, gitsha: str=str()) -> dict:
 
     aws_id = registry.split('.')[0] if registry.find('erc') != - 1 else str()
-    gcped = True if registry.find('gcr') != -1 else False
 
-    def registries(reg: str) -> callable:
-        if aws_id:
-            return ecr_img_list(
-                aws_id,
-                registry, 
-                repo
-            )
-
-    def tag_maker(img_tag: str, proj_id: str=str()) -> str:
+    def tag_maker(img_tag: str) -> str:
+        path = (
+            TagPath()
+            .container_registry(registry)
+            .image_tag(img_tag)
+            .gitsha(gitsha)
+        )
         if aws_id:
             return (
-                f'{registry}/{repo}:{img_tag}-{gitsha[0:10]}' 
-                if gitsha 
-                else f'{registry}/{repo}:{img_tag}'
+                path
+                .aws_ecr_repo(repo)
+                .ecr_path()
             )
-        if gcped:
-            return (
-                f'{registry}/{proj_id}/{img_tag}-{gitsha[0:10]}' 
-                if gitsha 
-                else f'{registry}/{proj_id}/{img_tag}'
-            )
-
-    def up_version(img_tag: str, registry: str) -> bool:
-        name, curr_ver = img_tag.split(SPLITS)
-        tags = registries(registry)
-        if tags:
-            semvers = list(
-                t.semver for t in tags if t.name == name
-            )
-            try:
-                latest_ver = sorted(
-                    semvers,
-                    key=StrictVersion
-                )[-1]
-            except IndexError:
-                latest_ver = '0.0.0'
-        else:
-            latest_ver = '0.0.0'
-        if semver(curr_ver) == semver('0.0.0'):
-            return True
-        if semver(curr_ver) > semver(latest_ver):
-            return True
-        return False
 
     def base(img_tag: str) -> None:
         dockerit(
@@ -133,7 +125,7 @@ def common_steps(registry: str, repo: str, gitsha: str=str()) -> dict:
 
     def prod(img_tag: str, build_path: str, *args) -> None:
         nodice = 'Same version...  Not dockering it...'
-        if up_version(img_tag, registry):
+        if up_version(img_tag, tags):
             dockerit(
                 tag_maker(img_tag),
                 build_path,
@@ -178,7 +170,9 @@ def proc_conf(
 
 
 def build_baseimage(
+    build_steps: callable,
     img_tag: str,
+    img_tags: list,
     registry: str,
     repo: str,
     ver: str,
@@ -186,46 +180,52 @@ def build_baseimage(
     github_sha: str=str(),
     *args
 ) -> None:
-    common_steps(registry, repo, github_sha)['base'](
+    build_steps(registry, repo, img_tags, github_sha)['base'](
         f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}'
     )
 
 
 def build_image(
+    build_steps: callable,
     dir: str,
     env: str,
+    img_tags: list,
     registry: str,
     repo: str,
     github_sha: str
 ) -> None:
     proc_conf(
-        path=f'{dir}/forge.yaml',
+        path=f'{dir}/{FORGE}',
         buildpath=dir,
-        run_env=common_steps(
+        run_env=build_steps(
             registry,
             repo,
+            img_tags,
             github_sha
         ),
         env=env
     )
 
 
+'''
+
 def build_img_nested(
+    build_steps: callable,
     env: str,
     registry: str,
     repo: str,
     root: str,
     github_sha: str
 ) -> None:
-    for p in os.listdir(root):
-        build_path = f'{root}/{p}'
-        proc_conf(
-            path=f'{build_path}/forge.yaml',
-            buildpath=build_path,
-            run_env=common_steps(
-                registry,
-                repo,
-                github_sha
-            ),
-            env=env
+    for dir in os.listdir(root):
+        build_image(
+            build_steps,
+            f'{root}/{dir}',
+            env,
+            registry,
+            repo,
+            github_sha,
+            tags
         )
+
+'''

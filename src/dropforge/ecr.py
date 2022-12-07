@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 
 from collections import namedtuple
-
-
-try:
-    import boto3
-    from dropforge.aws import boto_conf
-except ImportError:
-    raise Exception('This module isn\'t here!')
+import boto3
 
 
 SPLITS = '-'
@@ -21,7 +15,7 @@ Splitter = namedtuple(
 )
 
 
-def ecr_img_list(aws_id: str, repo: str) -> list:
+def ecr_imgs_list(aws_id: str, repo: str) -> list:
     ecr = boto3.client('ecr', config=boto_conf())
     resp = ecr.list_images(
         registryId=aws_id,
@@ -38,4 +32,13 @@ def ecr_img_list(aws_id: str, repo: str) -> list:
             Splitter(name=t[0], semver=t[1])
             for t in tags 
             if len(t) == 2
+        )
+
+
+def image_tags(aws_id: str, registry: str, repo: str) -> list:
+    if aws_id:
+        return ecr_imgs_list(
+            aws_id,
+            registry, 
+            repo
         )
