@@ -35,4 +35,4 @@ Homepage = "https://github.com/WillemRvX/dropforge"
 
 
 [project.scripts]
-forge = "dropforge.__mainevent__:main"
+forge = "dropforge.__maine__:main"
