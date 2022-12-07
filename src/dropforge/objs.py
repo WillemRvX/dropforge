@@ -10,14 +10,14 @@ class TagPath:
     reg = str()
     tag_path = str()    
 
-    def ecr_path(self):   
+    def ecr_path(self) -> str:   
         return (
             f'{self.reg}/{self.ecr_repo}:{self.img_tag}-{self.git_sha[0:10]}' 
             if self.git_sha 
             else f'{self.reg}/{self.ecr_repo}:{self.img_tag}'
         )
 
-    def gcr_path(self):   
+    def gcr_path(self) -> str:   
         return (
             f'{self.reg}/{self.gcp_proj}/{self.img_tag}-{self.git_sha[0:10]}' 
             if self.git_sha 
