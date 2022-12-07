@@ -3,7 +3,6 @@
 import os
 import yaml
 
-from collections import namedtuple
 from distutils.version import StrictVersion
 from importlib.metadata import version
 from subprocess import Popen, CalledProcessError
