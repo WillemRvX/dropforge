@@ -72,15 +72,16 @@ def dockerit(tag: str, build_path: str, aws_id: str, gitsha: str=None) -> None:
 
 def common_steps(registry: str, repo: str, gitsha: str) -> dict:
 
-    aws_id = registry.split('.')[0]
-
     def registries(reg: str) -> callable:
         if reg.find('ecr') != -1:
-            return ecr_img_list
+            return ecr_img_list(
+                registry, 
+                repo
+            )
 
     def up_version(img_tag: str, registry: str) -> bool:
         name, curr_ver = img_tag.split(SPLITS)
-        tags = registries(registry)()
+        tags = registries(registry)
         if tags:
             semvers = list(
                 t.semver for t in tags if t.name == name
@@ -102,7 +103,9 @@ def common_steps(registry: str, repo: str, gitsha: str) -> dict:
 
     def base(img_tag: str) -> None:
         dockerit(
-            f'{registry}/{repo}:{img_tag}-{gitsha[0:10]}' if gitsha else f'{registry}/{repo}:{img_tag}',
+            f'{registry}/{repo}:{img_tag}-{gitsha[0:10]}' 
+            if gitsha 
+            else f'{registry}/{repo}:{img_tag}',
             '.',
             aws_id
         )
