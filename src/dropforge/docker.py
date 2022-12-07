@@ -23,20 +23,26 @@ def popen(comm: list) -> bool:
         return False
 
 
-def build(tag: str, build_path: str, aws_id: str, gitsha: str=None) -> bool:
+def build(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) -> bool:
     comm=[
-        'docker',
-        'build',
-        build_path,
-        '--file',
-        f'{build_path}/Dockerfile',
-        '--tag',
-        tag,
+        'docker', 'build', build_path, 
+        '--file', f'{build_path}/Dockerfile', 
+        '--tag', tag,
+    ]
+    comm.extend([
         '--build-arg',
         f'_VERSION_={version("")}',
-    ]
+    ])
+    if aws_id:
+        comm.extend([
+            '--build-arg', 
+            f'_AWS_ACCT_ID_={aws_id}',
+        ])        
     if gitsha:
-        comm.extend(['--build-arg', f'_GITHUB_SHA_=-{gitsha}'])
+        comm.extend([
+            '--build-arg', 
+            f'_GITHUB_SHA_=-{gitsha}',
+        ])
     return popen(
         comm
     )
@@ -53,12 +59,12 @@ def push(built: bool, tag: str) -> bool:
         )
 
 
-def dockerit(tag: str, build_path: str, aws_id: str, gitsha: str=None) -> None:
+def dockerit(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) -> None:
     result = push(
         built=build(
             tag,
             build_path,
-            aws_id,
+            aws_id if aws_id else str(),
             gitsha
         ),
         tag=tag
@@ -72,9 +78,12 @@ def dockerit(tag: str, build_path: str, aws_id: str, gitsha: str=None) -> None:
 
 def common_steps(registry: str, repo: str, gitsha: str) -> dict:
 
+    aws_id = registry.split('.') if registry.find('erc') != - 1 else str()
+
     def registries(reg: str) -> callable:
-        if reg.find('ecr') != -1:
+        if aws_id:
             return ecr_img_list(
+                aws_id,
                 registry, 
                 repo
             )

@@ -21,10 +21,10 @@ Splitter = namedtuple(
 )
 
 
-def ecr_img_list(registry: str, repo: str) -> list:
+def ecr_img_list(aws_id: str, registry: str, repo: str) -> list:
     ecr = boto3.client('ecr', config=boto_conf())
     resp = ecr.list_images(
-        registryId=registry.split('.')[0],
+        registryId=aws_id,
         repositoryName=repo,
         maxResults=1000,
         filter=dict(tagStatus='TAGGED', )
@@ -36,5 +36,6 @@ def ecr_img_list(registry: str, repo: str) -> list:
         )
         return list(
             Splitter(name=t[0], semver=t[1])
-            for t in tags if len(t) == 2
+            for t in tags 
+            if len(t) == 2
         )
