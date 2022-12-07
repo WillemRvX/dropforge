@@ -7,8 +7,9 @@ from distutils.version import StrictVersion
 from importlib.metadata import version
 from subprocess import Popen, CalledProcessError
 
+import docker
 from semantic_version import Version as semver
-from dropforge.tagpath import TagPath
+from dropforge.objs import tagurler
 
 
 FORGE, SPLITS = 'forge.yaml', '-'
@@ -47,6 +48,18 @@ def build(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) -> bo
         ])
     return popen(
         comm
+    )
+
+
+def list_images(image_tag: str) -> list:
+    kwargs = dict(filters=dict(reference=f'{image_tag}*'))
+    return list(
+        img.tags[-1].replace('latest', '').replace(':', '') for img in
+        docker
+        .from_env()
+        .images
+        .list(**kwargs)
+        if img.tags[-1].find('latest') != '-1'
     )
 
 
@@ -98,47 +111,34 @@ def up_version(img_tag: str, tags: list) -> bool:
     return False
 
 
-def build_steps(registry: str, repo: str, tags: list, gitsha: str=str()) -> dict:
+def build_steps(registry: str, repo: str, gitsha: str=str()) -> dict:
 
     aws_id = registry.split('.')[0] if registry.find('erc') != - 1 else str()
-
-    def tag_maker(img_tag: str) -> str:
-        path = (
-            TagPath()
-            .container_registry(registry)
-            .image_tag(img_tag)
-            .gitsha(gitsha)
-        )
-        if aws_id:
-            return (
-                path
-                .aws_ecr_repo(repo)
-                .ecr_path()
-            )
+    kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
 
     def base(img_tag: str) -> None:
         dockerit(
-            tag_maker(img_tag),
+            tagurler(img_tag, **kwargs),
             '.',
             aws_id
         )
 
     def prod(img_tag: str, build_path: str, *args) -> None:
-        nodice = 'Same version...  Not dockering it...'
-        if up_version(img_tag, tags):
+        nodice = 'Same version...  Not dockering it...'        
+        if up_version(img_tag, list_images(img_tag)):
             dockerit(
-                tag_maker(img_tag),
+                tagurler(img_tag, **kwargs),
                 build_path,
                 aws_id
             )
         else:
             print(nodice)
 
-    def dev_qa(img_tag: str, build_path: str, build_img: bool) -> None:
+    def dev(img_tag: str, build_path: str, build_img: bool) -> None:
         no_build = 'Not building the image...'
         if build_img:
             dockerit(
-                tag_maker(img_tag),
+                tagurler(img_tag, **kwargs),
                 build_path,
                 aws_id,
                 gitsha[0:10]
@@ -148,9 +148,9 @@ def build_steps(registry: str, repo: str, tags: list, gitsha: str=str()) -> dict
 
     return dict(
         base=base,
-        dev=dev_qa,
+        dev=dev,
         prod=prod,
-        qa=dev_qa,
+        qa=dev,
     )
 
 
@@ -170,9 +170,7 @@ def proc_conf(
 
 
 def build_baseimage(
-    build_steps: callable,
     img_tag: str,
-    img_tags: list,
     registry: str,
     repo: str,
     ver: str,
@@ -180,16 +178,14 @@ def build_baseimage(
     github_sha: str=str(),
     *args
 ) -> None:
-    build_steps(registry, repo, img_tags, github_sha)['base'](
+    build_steps(registry, repo, github_sha)['base'](
         f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}'
     )
 
 
 def build_image(
-    build_steps: callable,
     dir: str,
     env: str,
-    img_tags: list,
     registry: str,
     repo: str,
     github_sha: str
@@ -200,17 +196,13 @@ def build_image(
         run_env=build_steps(
             registry,
             repo,
-            img_tags,
             github_sha
         ),
         env=env
     )
 
 
-'''
-
-def build_img_nested(
-    build_steps: callable,
+def build_images(
     env: str,
     registry: str,
     repo: str,
@@ -219,14 +211,9 @@ def build_img_nested(
 ) -> None:
     for dir in os.listdir(root):
         build_image(
-            build_steps,
             f'{root}/{dir}',
             env,
             registry,
             repo,
-            github_sha,
-            tags
+            github_sha
         )
-
-'''
-

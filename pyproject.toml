@@ -17,6 +17,7 @@ classifiers     = [
     "Programming Language :: Python :: 3",
 ]
 dependencies    = [
+    "docker>=6.0.1",
     "PyYAML>=6.0", 
     "semantic-version>=2.10.0", 
 ]
