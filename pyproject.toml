@@ -32,3 +32,7 @@ version         = "0.0.0"
 
 [project.urls]
 Homepage = "https://github.com/WillemRvX/dropforge"
+
+
+[project.scripts]
+forge = "dropforge.__mainevent__:main"
