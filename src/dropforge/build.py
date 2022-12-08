@@ -17,7 +17,7 @@ NOBUILD = 'Not building the image...'
 SPLITS = '-'
 
 
-def dockerfile(base_img_url: str) -> StringIO:
+def dockerfile_child(base_img_url: str) -> StringIO:
     with open(f'{os.getcwd()}/Dockerfile') as fin:
         data = ''
         for line in fin.readlines():
@@ -27,19 +27,19 @@ def dockerfile(base_img_url: str) -> StringIO:
     return StringIO(data)
 
 
-def dockerfile_base(base_img_name: str) -> StringIO:
+def dockerfile_base(img_name: str) -> StringIO:
     with open(f'{os.getcwd()}/Dockerfile_Base') as fin:
         data = ''
         for line in fin.readlines():
             if line.find('WORKDIR') != -1:
                 line = line.replace(
                     '{}', 
-                    base_img_name
+                    img_name
                 )
             if line.find('COPY') != -1:
                 line = line.replace(
                     '{}', 
-                    base_img_name
+                    img_name
                 )
             data += line
     return StringIO(data)
@@ -75,7 +75,10 @@ def build(
     if gitsha:
         bargs.update(dict(_GTIHUB_SHA_=gitsha, ))
     kwargs = dict(
-        fileobj=dockerfile(base_img_used_url), 
+        fileobj=
+        dockerfile_child(base_img_used_url)
+        if base_img_name_used 
+        else dockerfile_base(tag), 
         tag=tag, 
     )
     if bargs:
@@ -139,6 +142,10 @@ def dockerit(
         )
 
 
+def check_aws_id(registry: str) -> str:
+    return registry.split('.')[0] if registry.find('erc') != - 1 else str()
+
+
 def up_version(img_tag: str, tags: list) -> bool:
     name, curr_ver = img_tag.split(SPLITS)
     if tags:
@@ -165,7 +172,7 @@ def build_steps(
     gitsha: str=str()
 ) -> dict:
 
-    aws_id = registry.split('.')[0] if registry.find('erc') != - 1 else str()
+    aws_id = aws_id(registry)
     tag_kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
     dockerit_kwargs = tag_kwargs
     dockerit_kwargs.pop('gitsha')
@@ -240,14 +247,16 @@ def proc_conf(
 
 def build_baseimage(
     dir: str,
-    env: str=str(),
+    env: str,
+    ecr_reg_full_url: str=str(),
     github_sha: str=str(),
     *args
 ) -> None:
     path = f'{dir}/{FORGE}'
     with open(path) as forge:
         conf = yaml.safe_load(forge)
-        registry, repo = conf['container_registry'], conf.get('container_repo')        
+        registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
+        repo = conf.get('container_repo')        
         img_tag, ver = conf['image_name'], conf['image_ver']
         tag = f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}'
         if not repo:
