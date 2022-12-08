@@ -27,6 +27,24 @@ def dockerfile(base_img_url: str) -> StringIO:
     return StringIO(data)
 
 
+def dockerfile_base(base_img_name: str) -> StringIO:
+    with open(f'{os.getcwd()}/Dockerfile_Base') as fin:
+        data = ''
+        for line in fin.readlines():
+            if line.find('WORKDIR') != -1:
+                line = line.replace(
+                    '{}', 
+                    base_img_name
+                )
+            if line.find('COPY') != -1:
+                line = line.replace(
+                    '{}', 
+                    base_img_name
+                )
+            data += line
+    return StringIO(data)
+
+
 def popen(comm: list) -> bool:
     err_mssg = 'Something gone wrong!'
     try:
@@ -43,25 +61,26 @@ def build(
     repo: str,
     tag: str, 
     aws_id: str=str(),
-    base_img_name: str=str(),
-    base_img_ver: str=str(),
+    base_img_name_used: str=str(),
+    base_img_ver_used: str=str(),
     proj_id: str=str(), 
     gitsha: str=str()
 ) -> tuple:
-    based = f'{base_img_name}-{base_img_ver}'
+    based = f'{base_img_name_used}-{base_img_ver_used}'
     bargs = dict()
     if aws_id:
-        base_img_url = f'{aws_id}.{registry}/{repo}:{based}'
+        base_img_used_url = f'{aws_id}.{registry}/{repo}:{based}'
         bargs.update(dict(_AWS_ACCT_ID_=aws_id, ))
-    if base_img_ver:
-        bargs.update(dict(_BASE_IMG_VERSION_=base_img_ver, ))
+    if base_img_ver_used:
+        bargs.update(dict(_BASE_IMG_VERSION_=base_img_ver_used, ))
     if gitsha:
         bargs.update(dict(_GTIHUB_SHA_=gitsha, ))
     kwargs = dict(
-        buildargs=bargs, 
-        fileobj=dockerfile(base_img_url), 
+        fileobj=dockerfile(base_img_used_url), 
         tag=tag, 
     )
+    if bargs:
+        kwargs.update(dict(buildargs=bargs, ))
     return (
         docker
         .from_env()
@@ -154,7 +173,11 @@ def build_steps(
     dockerit_kwargs.pop('gitsha')
     dockerit_kwargs.update(dict(aws_id=aws_id, ))
 
-    def base(img_tag: str) -> None:
+    def base(
+        img_tag: str, 
+        base_img_name: str, 
+        base_img_ver: str
+    ) -> None:
         dockerit(
             tag=tagurler(img_tag, **tag_kwargs)
         )
@@ -162,16 +185,16 @@ def build_steps(
     def prod(
         img_tag: str, 
         build_img: bool,     
-        base_img_name: str=str(),
-        base_img_ver: str=str(), 
+        base_img_name_used: str=str(),
+        base_img_ver_used: str=str(), 
     ) -> None:
         nodice = 'Same version...  Not dockering it...'        
         if up_version(img_tag, list_images(img_tag)):
             if  build_img:
                 dockerit(
                     tag=tagurler(img_tag, **tag_kwargs),
-                    base_img_name=base_img_name,
-                    base_img_ver=base_img_ver,
+                    base_img_name_used=base_img_name_used,
+                    base_img_ver_used=base_img_ver_used,
                     **dockerit_kwargs
                 )
             else:
@@ -182,14 +205,14 @@ def build_steps(
     def dev(
         img_tag: str, 
         build_img: bool,     
-        base_img_name: str=str(),
-        base_img_ver: str=str(), 
+        base_img_name_used: str=str(),
+        base_img_ver_used: str=str(), 
     ) -> None:
         if build_img:
             dockerit(
                 tag=tagurler(img_tag, **tag_kwargs),
-                base_img_name=base_img_name,
-                base_img_ver=base_img_ver,
+                base_img_name_used=base_img_name_used,
+                base_img_ver_used=base_img_ver_used,
                 gitsha=gitsha[0:10],
                 **dockerit_kwargs
             )
@@ -214,12 +237,13 @@ def proc_conf(
         run_env[env](
             img_tag=conf['image_name'],
             build_img=conf.get(f'build_deploy_{env}'),
-            base_img_name=conf.get('base_img_name'),
-            base_img_ver=conf.get('base_img_ver')
+            base_img_name_used=conf.get('base_image_name_used'),
+            base_img_ver_used=conf.get('base_image_version_used')
         )
 
 
 def build_baseimage(
+    dir: str,
     img_tag: str,
     registry: str,
     repo: str,
@@ -228,9 +252,14 @@ def build_baseimage(
     github_sha: str=str(),
     *args
 ) -> None:
-    build_steps(registry, repo, github_sha)['base'](
-        f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}'
-    )
+    path = f'{dir}/{FORGE}'
+    with open(path) as forge:
+        conf = yaml.safe_load(forge)        
+        build_steps(registry, repo, github_sha)['base'](
+            tag=f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}',
+            base_img_name=conf.get('base_image_name'),
+            base_img_ver=conf.get('base_image_version')
+        )
 
 
 def build_image(

@@ -2,8 +2,10 @@ name:
 build_deploy_dev: false
 build_deploy_qa: false
 build_deploy_prod: false
-base_image_name:
-base_image_version:
+base_image_name:          # optional
+base_image_version:       # optional
+base_image_name_used:     # optional
+base_image_version_used:  # optional
 image_name:
 region:
 registry:
