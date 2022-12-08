@@ -1,0 +1,11 @@
+name: base_ecr
+build_deploy_dev: false
+build_deploy_qa: false
+build_deploy_prod: false
+container_registry: dkr.ecr.us-east-1.amazonaws.com
+container_repo: containerbean  
+image_name: ethelease
+image_version: 0.0.0  
+region: us-east-1     
+args:
+  key: value

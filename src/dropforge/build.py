@@ -62,8 +62,7 @@ def build(
     tag: str, 
     aws_id: str=str(),
     base_img_name_used: str=str(),
-    base_img_ver_used: str=str(),
-    proj_id: str=str(), 
+    base_img_ver_used: str=str(), 
     gitsha: str=str()
 ) -> tuple:
     based = f'{base_img_name_used}-{base_img_ver_used}'
@@ -115,9 +114,8 @@ def push(built: bool, tag: str) -> bool:
 def dockerit(
     tag: str, 
     aws_id: str=str(),
-    proj_id: str = str(),
-    base_img_name: str=str(), 
-    base_img_ver: str=str(), 
+    base_img_name_used: str=str(),
+    base_img_ver_used: str=str(), 
     gitsha: str=str(),
     registry: str=str(),
     repo: str=str(),
@@ -125,8 +123,8 @@ def dockerit(
     result = push(
         built=build(
             aws_id=aws_id if aws_id else str(),
-            base_img_name=base_img_name if base_img_name else str(),
-            base_img_ver=base_img_ver if base_img_ver else str(),
+            base_img_name_used=base_img_name_used if base_img_name_used else str(),
+            base_img_ver_used=base_img_ver_used if base_img_ver_used else str(),
             gitsha=gitsha,
             tag=tag,
             registry=registry,
@@ -175,11 +173,9 @@ def build_steps(
 
     def base(
         img_tag: str, 
-        base_img_name: str, 
-        base_img_ver: str
     ) -> None:
         dockerit(
-            tag=tagurler(img_tag, **tag_kwargs)
+            tag=tagurler(img_tag, **tag_kwargs),
         )
 
     def prod(
@@ -244,22 +240,23 @@ def proc_conf(
 
 def build_baseimage(
     dir: str,
-    img_tag: str,
-    registry: str,
-    repo: str,
-    ver: str,
     env: str=str(),
     github_sha: str=str(),
     *args
 ) -> None:
     path = f'{dir}/{FORGE}'
     with open(path) as forge:
-        conf = yaml.safe_load(forge)        
-        build_steps(registry, repo, github_sha)['base'](
-            tag=f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}',
-            base_img_name=conf.get('base_image_name'),
-            base_img_ver=conf.get('base_image_version')
-        )
+        conf = yaml.safe_load(forge)
+        registry, repo = conf['container_registry'], conf.get('container_repo')        
+        img_tag, ver = conf['image_name'], conf['image_ver']
+        tag = f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}'
+        if not repo:
+            repo = conf.get('gcp_project_id')
+        build_steps(
+            registry, 
+            repo, 
+            github_sha
+        )['base'](tag)
 
 
 def build_image(
@@ -296,3 +293,8 @@ def build_images(
             repo,
             github_sha
         )
+
+
+if __name__ == '__main__':
+
+    pass

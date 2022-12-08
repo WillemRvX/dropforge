@@ -6,15 +6,16 @@ base_image_name:          # optional
 base_image_version:       # optional
 base_image_name_used:     # optional
 base_image_version_used:  # optional
+container_registry:
+container_repo:           # optional
 image_name:
 region:
-registry:
-ecr_container_repo:       # optional
+aws_log_group:            # optional
 ecs_exec_role_arn:        # optional
 ecs_launch_type:          # optional
 ecs_network_mode:         # optional
 ecs_netconf_secret_name:  # optional
 ecs_task_role:            # optional
-aws_log_group:            # optional
+gcp_project_id:           # optional 
 args:
   key: value
