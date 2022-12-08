@@ -177,8 +177,6 @@ def up_version(img_tag: str, tags: list) -> bool:
 def build_steps(
     registry: str, 
     repo: str, 
-    base_img_name: str=str(),
-    base_img_ver: str=str(), 
     gitsha: str=str()
 ) -> dict:
 
@@ -186,27 +184,26 @@ def build_steps(
     tag_kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
     dockerit_kwargs = tag_kwargs
     dockerit_kwargs.pop('gitsha')
-    dockerit_kwargs.update(
-        dict(
-            aws_id=aws_id, 
-            base_img_name=base_img_name,
-            base_img_ver=base_img_ver,
-            registry=registry,
-            repo=repo
-        )
-    )
+    dockerit_kwargs.update(dict(aws_id=aws_id, ))
 
     def base(img_tag: str) -> None:
         dockerit(
             tag=tagurler(img_tag, **tag_kwargs)
         )
 
-    def prod(img_tag: str, build_img: bool) -> None:
+    def prod(
+        img_tag: str, 
+        build_img: bool,     
+        base_img_name: str=str(),
+        base_img_ver: str=str(), 
+    ) -> None:
         nodice = 'Same version...  Not dockering it...'        
         if up_version(img_tag, list_images(img_tag)):
             if  build_img:
                 dockerit(
                     tag=tagurler(img_tag, **tag_kwargs),
+                    base_img_name=base_img_name,
+                    base_img_ver=base_img_ver,
                     **dockerit_kwargs
                 )
             else:
@@ -214,10 +211,17 @@ def build_steps(
         else:
             print(nodice)
 
-    def dev(img_tag: str, build_img: bool) -> None:
+    def dev(
+        img_tag: str, 
+        build_img: bool,     
+        base_img_name: str=str(),
+        base_img_ver: str=str(), 
+    ) -> None:
         if build_img:
             dockerit(
                 tag=tagurler(img_tag, **tag_kwargs),
+                base_img_name=base_img_name,
+                base_img_ver=base_img_ver,
                 gitsha=gitsha[0:10],
                 **dockerit_kwargs
             )
@@ -240,8 +244,10 @@ def proc_conf(
     with open(path) as forge:
         conf = yaml.safe_load(forge)
         run_env[env](
-            conf['image_name'],
-            conf.get(f'build_deploy_{env}')
+            img_tag=conf['image_name'],
+            build_img=conf.get(f'build_deploy_{env}'),
+            base_img_name=conf.get('base_img_name'),
+            base_img_ver=conf.get('base_img_ver')
         )
 
 
