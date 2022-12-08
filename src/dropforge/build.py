@@ -3,32 +3,37 @@
 import os
 import yaml
 
+from copy import deepcopy
 from distutils.version import StrictVersion
-from io import StringIO
+from io import BytesIO
 from subprocess import Popen, CalledProcessError
 
 import docker
+from docker import APIClient
 from semantic_version import Version as semver
 from dropforge.objs import tagurler
 
 
+BASEFILES = f'{os.getcwd()}/src/dropforge/basedonfiles'
 FORGE = 'forge.yaml'
 NOBUILD = 'Not building the image...'
 SPLITS = '-'
 
 
-def dockerfile_child(base_img_url: str) -> StringIO:
-    with open(f'{os.getcwd()}/Dockerfile') as fin:
+def dockerfile_child(base_img_url: str) -> BytesIO:
+    with open(f'{BASEFILES}/Dockerfile') as fin:
         data = ''
         for line in fin.readlines():
             if line.find('FROM') != -1:
                 line = line.replace('{}', base_img_url)
             data += line
-    return StringIO(data)
+    return BytesIO(
+        data.encode('utf-8')
+    )
 
 
-def dockerfile_base(img_name: str) -> StringIO:
-    with open(f'{os.getcwd()}/Dockerfile_Base') as fin:
+def dockerfile_base(img_name: str) -> BytesIO:
+    with open(f'{BASEFILES}/Dockerfile_Based') as fin:
         data = ''
         for line in fin.readlines():
             if line.find('WORKDIR') != -1:
@@ -42,7 +47,9 @@ def dockerfile_base(img_name: str) -> StringIO:
                     img_name
                 )
             data += line
-    return StringIO(data)
+    return BytesIO(
+        data.encode('utf-8')
+    )
 
 
 def popen(comm: list) -> bool:
@@ -172,9 +179,9 @@ def build_steps(
     gitsha: str=str()
 ) -> dict:
 
-    aws_id = aws_id(registry)
+    aws_id = check_aws_id(registry)
     tag_kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
-    dockerit_kwargs = tag_kwargs
+    dockerit_kwargs = deepcopy(tag_kwargs)
     dockerit_kwargs.pop('gitsha')
     dockerit_kwargs.update(dict(aws_id=aws_id, ))
 
@@ -257,7 +264,7 @@ def build_baseimage(
         conf = yaml.safe_load(forge)
         registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
         repo = conf.get('container_repo')        
-        img_tag, ver = conf['image_name'], conf['image_ver']
+        img_tag, ver = conf['image_name'], conf['image_version']
         tag = f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}'
         if not repo:
             repo = conf.get('gcp_project_id')
@@ -306,4 +313,8 @@ def build_images(
 
 if __name__ == '__main__':
 
-    pass
+    build_baseimage(
+        dir=f'/Users/willchen/privspace/repos/dropforge/tests/systems/base_img_ecr',
+        env='dv',
+        github_sha='1b2b3',    
+    )

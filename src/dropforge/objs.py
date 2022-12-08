@@ -71,23 +71,23 @@ class TagURL:
 
 def tagurler(
     img_tag: str,  
-    reigstry: str, 
+    registry: str, 
     gitsha: str,
     gcp_proj_id: str=str(),
     namespace: str=str(),
     repo: str=str()
 ) -> str:
     url = deepcopy(
-        TagURL().container_registry(reigstry).image_tag(img_tag)
+        TagURL().container_registry(registry).image_tag(img_tag)
         .gitsha(gitsha)
     )
-    if reigstry.find('ecr') != '-1':
+    if registry.find('ecr') != '-1':
         return (
             url
             .aws_ecr_repo(repo)
             .ecr_url()
         )
-    elif reigstry.find('gcr') != '-1':
+    elif registry.find('gcr') != '-1':
         return (
             url
             .gcp_proj_id(gcp_proj_id)
