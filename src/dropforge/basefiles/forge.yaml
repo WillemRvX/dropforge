@@ -1,0 +1,18 @@
+name:
+build_deploy_dev: false
+build_deploy_qa: false
+build_deploy_prod: false
+base_image_name:
+base_image_version:
+image_name:
+region:
+registry:
+ecr_container_repo:       # optional
+ecs_exec_role_arn:        # optional
+ecs_launch_type:          # optional
+ecs_network_mode:         # optional
+ecs_netconf_secret_name:  # optional
+ecs_task_role:            # optional
+aws_log_group:            # optional
+args:
+  key: value

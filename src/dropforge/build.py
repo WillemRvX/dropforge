@@ -4,7 +4,7 @@ import os
 import yaml
 
 from distutils.version import StrictVersion
-from importlib.metadata import version
+from io import StringIO
 from subprocess import Popen, CalledProcessError
 
 import docker
@@ -12,7 +12,19 @@ from semantic_version import Version as semver
 from dropforge.objs import tagurler
 
 
-FORGE, SPLITS = 'forge.yaml', '-'
+FORGE = 'forge.yaml'
+NOBUILD = 'Not building the image...'
+SPLITS = '-'
+
+
+def dockerfile(base_img_url: str):
+    with open(f'{os.getcwd()}/Dockerfile') as fin:
+        data = ''
+        for line in fin.readlines():
+            if line.find('FROM') != -1:
+                line = line.replace('{}', base_img_url)
+            data += line
+    return StringIO(data)
 
 
 def popen(comm: list) -> bool:
@@ -26,28 +38,67 @@ def popen(comm: list) -> bool:
         return False
 
 
-def build(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) -> bool:
+def build_old(
+    tag: str, 
+    build_path: str, 
+    aws_id: str=str(),
+    base_img_ver: str=str(), 
+    gitsha: str=str()
+) -> bool:
     comm=[
-        'docker', 'build', build_path, 
-        '--file', f'{build_path}/Dockerfile', 
-        '--tag', tag,
+        'docker', 'build', build_path, '--file', f'{build_path}/Dockerfile', 
+        '--tag', 
+        tag,
     ]
-    comm.extend([
+    if base_img_ver:
+        comm.extend([
         '--build-arg',
-        f'_BASE_IMG_VERSION_={version("")}',
-    ])
+        f'_BASE_IMG_VERSION_={base_img_ver}',
+        ])
     if aws_id:
         comm.extend([
-            '--build-arg', 
-            f'_AWS_ACCT_ID_={aws_id}',
+        '--build-arg', 
+        f'_AWS_ACCT_ID_={aws_id}',
         ])        
     if gitsha:
         comm.extend([
-            '--build-arg', 
-            f'_GITHUB_SHA_=-{gitsha}',
+        '--build-arg', 
+        f'_GITHUB_SHA_=-{gitsha}',
         ])
     return popen(
         comm
+    )
+
+
+def build(
+    registry: str,
+    repo: str,
+    tag: str, 
+    aws_id: str=str(),
+    base_img_name: str=str(),
+    base_img_ver: str=str(),
+    proj_id: str=str(), 
+    gitsha: str=str()
+) -> tuple:
+    based = f'{base_img_name}-{base_img_ver}'
+    bargs = dict()
+    if aws_id:
+        base_img_url = f'{aws_id}.{registry}/{repo}:{based}'
+        bargs.update(dict(_AWS_ACCT_ID_=aws_id, ))
+    if base_img_ver:
+        bargs.update(dict(_BASE_IMG_VERSION_=base_img_ver, ))
+    if gitsha:
+        bargs.update(dict(_GTIHUB_SHA_=gitsha, ))
+    kwargs = dict(
+        buildargs=bargs, 
+        fileobj=dockerfile(base_img_url), 
+        tag=tag, 
+    )
+    return (
+        docker
+        .from_env()
+        .images
+        .build(**kwargs)
     )
 
 
@@ -74,13 +125,25 @@ def push(built: bool, tag: str) -> bool:
         )
 
 
-def dockerit(tag: str, build_path: str, aws_id: str=str(), gitsha: str=str()) -> None:
+def dockerit(
+    tag: str, 
+    aws_id: str=str(),
+    proj_id: str = str(),
+    base_img_name: str=str(), 
+    base_img_ver: str=str(), 
+    gitsha: str=str(),
+    registry: str=str(),
+    repo: str=str(),
+) -> None:
     result = push(
         built=build(
-            tag,
-            build_path,
-            aws_id if aws_id else str(),
-            gitsha
+            aws_id=aws_id if aws_id else str(),
+            base_img_name=base_img_name if base_img_name else str(),
+            base_img_ver=base_img_ver if base_img_ver else str(),
+            gitsha=gitsha,
+            tag=tag,
+            registry=registry,
+            repo=repo
         ),
         tag=tag
     )
@@ -111,40 +174,55 @@ def up_version(img_tag: str, tags: list) -> bool:
     return False
 
 
-def build_steps(registry: str, repo: str, gitsha: str=str()) -> dict:
+def build_steps(
+    registry: str, 
+    repo: str, 
+    base_img_name: str=str(),
+    base_img_ver: str=str(), 
+    gitsha: str=str()
+) -> dict:
 
     aws_id = registry.split('.')[0] if registry.find('erc') != - 1 else str()
-    kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
+    tag_kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
+    dockerit_kwargs = tag_kwargs
+    dockerit_kwargs.pop('gitsha')
+    dockerit_kwargs.update(
+        dict(
+            aws_id=aws_id, 
+            base_img_name=base_img_name,
+            base_img_ver=base_img_ver,
+            registry=registry,
+            repo=repo
+        )
+    )
 
     def base(img_tag: str) -> None:
         dockerit(
-            tagurler(img_tag, **kwargs),
-            '.',
-            aws_id
+            tag=tagurler(img_tag, **tag_kwargs)
         )
 
-    def prod(img_tag: str, build_path: str, *args) -> None:
+    def prod(img_tag: str, build_img: bool) -> None:
         nodice = 'Same version...  Not dockering it...'        
         if up_version(img_tag, list_images(img_tag)):
-            dockerit(
-                tagurler(img_tag, **kwargs),
-                build_path,
-                aws_id
-            )
+            if  build_img:
+                dockerit(
+                    tag=tagurler(img_tag, **tag_kwargs),
+                    **dockerit_kwargs
+                )
+            else:
+                print(NOBUILD)
         else:
             print(nodice)
 
-    def dev(img_tag: str, build_path: str, build_img: bool) -> None:
-        no_build = 'Not building the image...'
+    def dev(img_tag: str, build_img: bool) -> None:
         if build_img:
             dockerit(
-                tagurler(img_tag, **kwargs),
-                build_path,
-                aws_id,
-                gitsha[0:10]
+                tag=tagurler(img_tag, **tag_kwargs),
+                gitsha=gitsha[0:10],
+                **dockerit_kwargs
             )
         else:
-            print(no_build)
+            print(NOBUILD)
 
     return dict(
         base=base,
@@ -156,15 +234,13 @@ def build_steps(registry: str, repo: str, gitsha: str=str()) -> dict:
 
 def proc_conf(
     path: str,
-    buildpath: str,
     run_env: callable,
     env: str
 ) -> None:
     with open(path) as forge:
         conf = yaml.safe_load(forge)
         run_env[env](
-            conf['image_tag'],
-            buildpath,
+            conf['image_name'],
             conf.get(f'build_deploy_{env}')
         )
 
