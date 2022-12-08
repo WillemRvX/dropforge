@@ -17,7 +17,7 @@ NOBUILD = 'Not building the image...'
 SPLITS = '-'
 
 
-def dockerfile(base_img_url: str):
+def dockerfile(base_img_url: str) -> StringIO:
     with open(f'{os.getcwd()}/Dockerfile') as fin:
         data = ''
         for line in fin.readlines():
@@ -36,38 +36,6 @@ def popen(comm: list) -> bool:
     except CalledProcessError:
         print(err_mssg)
         return False
-
-
-def build_old(
-    tag: str, 
-    build_path: str, 
-    aws_id: str=str(),
-    base_img_ver: str=str(), 
-    gitsha: str=str()
-) -> bool:
-    comm=[
-        'docker', 'build', build_path, '--file', f'{build_path}/Dockerfile', 
-        '--tag', 
-        tag,
-    ]
-    if base_img_ver:
-        comm.extend([
-        '--build-arg',
-        f'_BASE_IMG_VERSION_={base_img_ver}',
-        ])
-    if aws_id:
-        comm.extend([
-        '--build-arg', 
-        f'_AWS_ACCT_ID_={aws_id}',
-        ])        
-    if gitsha:
-        comm.extend([
-        '--build-arg', 
-        f'_GITHUB_SHA_=-{gitsha}',
-        ])
-    return popen(
-        comm
-    )
 
 
 def build(
