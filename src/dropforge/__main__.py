@@ -8,13 +8,8 @@ from os.path import expanduser
 from pathlib import Path
 
 
-WHATS = dict(
-    init=init
-)
-
-
 def copy_basefiles(proj_loc: str) -> None:
-    whence, dest = 'basefiles', f'{proj_loc}/{f}'
+    whence = 'basefiles'
     files = ['forge.yaml', 'requirements.txt', ]
     for f in files:
         goods = (
@@ -22,7 +17,7 @@ def copy_basefiles(proj_loc: str) -> None:
             .get_data(__name__, f'{whence}/{f}')
             .decode()
         )
-        with open(dest, 'w') as fout:
+        with open(f'{proj_loc}/{f}', 'w') as fout:
             fout.write(goods)
 
 
@@ -31,7 +26,7 @@ def project_location(name: str, where: str) -> str:
     return f'{loc}/{name}'
 
 
-def makeitso(proj_loc: str) -> None:
+def scaffold(proj_loc: str) -> None:
     subpaths, kwargs = dict(workspace='some.py', ), dict(exist_ok=False)
     os.makedirs(proj_loc, **kwargs)
     for p, f in subpaths.items():
@@ -41,16 +36,33 @@ def makeitso(proj_loc: str) -> None:
         filer.touch(**kwargs)
 
 
+def makeitso(args: argparse) -> None:
+    if args:
+        where, name  = args.localrepo_dir, args.name
+        proj_loc = project_location(name=name, where=where)
+        scaffold(proj_loc)
+        copy_basefiles(proj_loc)
+
+
+def args(what: str) -> list:
+    inits = ['--localrepo-dir', '--name', ]
+    return dict(
+        init=inits, 
+    )[what]
+
+
+WHATS = dict(init=makeitso, )
+
+
 def iter_subpars(subpars: argparse) -> None:
     subparsers = {k: None for k in WHATS}
     for what in WHATS:
         subparsers[what] = subpars.add_parser(what)
-        for arg in arghs(what):
-            req = True
+        for arg in args(what):
             subparsers[what] \
                 .add_argument(
                     arg,
-                    required=req
+                    required=True
                 )
         subparsers[what] \
             .set_defaults(
