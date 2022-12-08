@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+import json
 import os
 import yaml
 
 from copy import deepcopy
 from distutils.version import StrictVersion
 from io import BytesIO
+from json.decoder import JSONDecodeError
 from subprocess import Popen, CalledProcessError
 
 import docker
@@ -65,35 +67,33 @@ def popen(comm: list) -> bool:
         return False
 
 
-    def _build():
-        build_args = {
-            '__ENV__': 'dv',
-            '__FAMILY__': proj_name
-        }
-        cli = APIClient(base_url='unix://var/run/docker.sock')
-        for line in cli.build(
-                path=proj_loc,
-                rm=True,
-                buildargs=build_args,
-                tag=tag):
-            line = line.decode('utf-8')
-            line = line.split('\n')
-            for row in line:
-                row = ''.join(row)
-                try:
-                    row = json.loads(row)
-                    stream = row.get('stream')
-                    if stream:
-                        print(
-                            stream
-                                .replace(
-                                    '\n',
-                                    ''
-                                )
+def _build(fileobj: bytes, tag: str, path: str=str(), build_args: dict=dict()) -> None:
+    cli = APIClient(base_url='unix://var/run/docker.sock')
+    for line in cli.build(
+        fileobj=fileobj,
+        # path=path,
+        rm=True,
+        buildargs=build_args,
+        tag=tag
+    ):
+        line = line.decode('utf-8')
+        line = line.split('\n')
+        for row in line:
+            row = ''.join(row)
+            try:
+                row = json.loads(row)
+                stream = row.get('stream')
+                if stream:
+                    print(
+                        stream
+                        .replace(
+                            '\n',
+                            ''
                         )
-                except JSONDecodeError:
-                    pass
-        print('Done!')
+                    )
+            except JSONDecodeError:
+                pass
+    print('Done!')
 
 
 def build(
@@ -124,12 +124,8 @@ def build(
     )
     if bargs:
         kwargs.update(dict(buildargs=bargs, ))
-    return (
-        docker
-        .from_env()
-        .images
-        .build(**kwargs)
-    )
+    _build(**kwargs)
+    return False
 
 
 def list_images(image_tag: str) -> list:
