@@ -47,9 +47,11 @@ def dockerfile_base(img_name: str) -> BytesIO:
                     img_name
                 )
             data += line
-    return BytesIO(
+    _data = BytesIO(
         data.encode('utf-8')
     )
+    print(data)
+    return _data
 
 
 def popen(comm: list) -> bool:
@@ -63,6 +65,37 @@ def popen(comm: list) -> bool:
         return False
 
 
+    def _build():
+        build_args = {
+            '__ENV__': 'dv',
+            '__FAMILY__': proj_name
+        }
+        cli = APIClient(base_url='unix://var/run/docker.sock')
+        for line in cli.build(
+                path=proj_loc,
+                rm=True,
+                buildargs=build_args,
+                tag=tag):
+            line = line.decode('utf-8')
+            line = line.split('\n')
+            for row in line:
+                row = ''.join(row)
+                try:
+                    row = json.loads(row)
+                    stream = row.get('stream')
+                    if stream:
+                        print(
+                            stream
+                                .replace(
+                                    '\n',
+                                    ''
+                                )
+                        )
+                except JSONDecodeError:
+                    pass
+        print('Done!')
+
+
 def build(
     registry: str,
     repo: str,
@@ -70,7 +103,8 @@ def build(
     aws_id: str=str(),
     base_img_name_used: str=str(),
     base_img_ver_used: str=str(), 
-    gitsha: str=str()
+    gitsha: str=str(),
+    img_name: str=str()
 ) -> tuple:
     based = f'{base_img_name_used}-{base_img_ver_used}'
     bargs = dict()
@@ -85,7 +119,7 @@ def build(
         fileobj=
         dockerfile_child(base_img_used_url)
         if base_img_name_used 
-        else dockerfile_base(tag), 
+        else dockerfile_base(img_name), 
         tag=tag, 
     )
     if bargs:
@@ -127,6 +161,7 @@ def dockerit(
     base_img_name_used: str=str(),
     base_img_ver_used: str=str(), 
     gitsha: str=str(),
+    img_name: str=str(),
     registry: str=str(),
     repo: str=str(),
 ) -> None:
@@ -136,9 +171,10 @@ def dockerit(
             base_img_name_used=base_img_name_used if base_img_name_used else str(),
             base_img_ver_used=base_img_ver_used if base_img_ver_used else str(),
             gitsha=gitsha,
-            tag=tag,
+            img_name=img_name,
             registry=registry,
-            repo=repo
+            repo=repo,
+            tag=tag
         ),
         tag=tag
     )
@@ -185,11 +221,10 @@ def build_steps(
     dockerit_kwargs.pop('gitsha')
     dockerit_kwargs.update(dict(aws_id=aws_id, ))
 
-    def base(
-        img_tag: str, 
-    ) -> None:
+    def base(img_name: str, tag: str) -> None:
         dockerit(
-            tag=tagurler(img_tag, **tag_kwargs),
+            tag=tag, 
+            img_name=img_name
         )
 
     def prod(
@@ -264,15 +299,15 @@ def build_baseimage(
         conf = yaml.safe_load(forge)
         registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
         repo = conf.get('container_repo')        
-        img_tag, ver = conf['image_name'], conf['image_version']
-        tag = f'{img_tag}_{env}-{ver}' if env else f'{img_tag}-{ver}'
+        img_name, ver = conf['image_name'], conf['image_version']
+        tag = f'{img_name}_{env}-{ver}' if env else f'{img_name}-{ver}'
         if not repo:
             repo = conf.get('gcp_project_id')
         build_steps(
             registry, 
             repo, 
             github_sha
-        )['base'](tag)
+        )['base'](img_name, tag)
 
 
 def build_image(
