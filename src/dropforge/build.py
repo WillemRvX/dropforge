@@ -8,23 +8,30 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 from io import BytesIO
 from json.decoder import JSONDecodeError
+from pathlib import Path
 from subprocess import Popen, CalledProcessError
 
 import docker
 from docker import APIClient
 from semantic_version import Version as semver
+
 from dropforge.objs import tagurler
 
 
-BASEFILES = f'{os.getcwd()}/src/dropforge/basedonfiles'
 DFILE = 'Dockerfile'
 FORGE = 'forge.yaml'
 NOBUILD = 'Not building the image...'
 SPLITS = '-'
 
 
+def basedonfiles():
+    path = str(Path(__file__)).split('/')
+    path.pop()
+    return f'{"/".join(path)}/basedonfiles'
+
+
 def dockerfile_child(base_img_url: str, dir: str) -> BytesIO:
-    with open(f'{BASEFILES}/{DFILE}') as fin:
+    with open(f'{basedonfiles()}/{DFILE}') as fin:
         data = ''
         for line in fin.readlines(): 
             if line.find('FROM') != -1:
@@ -39,7 +46,7 @@ def dockerfile_child(base_img_url: str, dir: str) -> BytesIO:
 
 
 def dockerfile_base(dir: str, img_name: str) -> BytesIO:
-    with open(f'{BASEFILES}/{DFILE}_Based') as fin:
+    with open(f'{basedonfiles()}/{DFILE}_Based') as fin:
         data = ''
         for line in fin.readlines():              
             if line.find('WORKDIR') != -1:
@@ -316,16 +323,15 @@ def proc_conf(
         )
 
 
-def build_baseimage(
+def build_a_baseimage(
     dir: str,
     env: str,
     ecr_reg_full_url: str=str(),
-    github_sha: str=str(),
+    gitsha: str=str(),
     *args
 ) -> None:
     path = f'{dir}/{FORGE}'
     os.chdir(dir)
-    print(os.getcwd())
     with open(path) as forge:
         conf = yaml.safe_load(forge)
         registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
@@ -338,7 +344,7 @@ def build_baseimage(
             dir,
             registry, 
             repo, 
-            github_sha
+            gitsha
         )['base'](img_name, tag)
 
 

@@ -7,6 +7,8 @@ import pkgutil
 from os.path import expanduser
 from pathlib import Path
 
+from dropforge.build import build_a_baseimage
+
 
 def copy_basefiles(proj_loc: str) -> None:
     whence = 'basedonfiles'
@@ -36,6 +38,15 @@ def scaffold(proj_loc: str) -> None:
         filer.touch(**kwargs)
 
 
+def baseimage(args: argparse) -> None:
+    build_a_baseimage(
+        dir=args.project_dir,
+        env=args.env,
+        ecr_reg_full_url=args.ecr_reg_full_url,
+        gitsha=args.gitsha
+    )
+
+
 def makeitso(args: argparse) -> None:
     if args:
         where, name  = args.localrepo_dir, args.name
@@ -45,13 +56,30 @@ def makeitso(args: argparse) -> None:
 
 
 def args(what: str) -> list:
-    inits = ['--localrepo-dir', '--name', ]
+    baseimg = [
+        '--project-dir', 
+        '--env',
+        '--ecr-reg-full-url',
+        '--gitsha',
+    ]
+    inits = [
+        '--localrepo-dir', 
+        '--name', 
+    ]
     return dict(
+        baseimage=baseimg,
         init=inits, 
     )[what]
 
 
-WHATS = dict(init=makeitso, )
+OPTIONALS = {
+    '--ecr-reg-full-url',
+    '--gitsha',
+}
+WHATS = dict(
+    baseimage=baseimage,
+    init=makeitso, 
+)
 
 
 def iter_subpars(subpars: argparse) -> None:
@@ -59,10 +87,13 @@ def iter_subpars(subpars: argparse) -> None:
     for what in WHATS:
         subparsers[what] = subpars.add_parser(what)
         for arg in args(what):
+            req = True
+            if arg in OPTIONALS:
+                req = False
             subparsers[what] \
                 .add_argument(
                     arg,
-                    required=True
+                    required=req
                 )
         subparsers[what] \
             .set_defaults(
