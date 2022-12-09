@@ -151,6 +151,7 @@ def build(
         )
 
     if _build(**kwargs):
+        os.remove(f'{dir}/Dockerfile')
         return True
     else:
         return False
