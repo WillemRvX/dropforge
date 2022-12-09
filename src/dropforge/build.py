@@ -151,7 +151,7 @@ def build(
         )
 
     if _build(**kwargs):
-        return False
+        return True
     else:
         return False
 
@@ -380,4 +380,3 @@ def build_images(
 if __name__ == '__main__':
 
     pass
-
