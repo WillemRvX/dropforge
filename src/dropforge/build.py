@@ -248,10 +248,10 @@ def build_steps(
     dockerit_kwargs.pop('gitsha')
     dockerit_kwargs.update(dict(aws_id=aws_id, ))
 
-    def base(img_name: str, tag: str) -> None:
+    def base(img_name: str, img_tag: str) -> None:
         dockerit(
             dir,
-            tag=tag, 
+            tag=tagurler(img_tag, **tag_kwargs), 
             img_name=img_name
         )
 
