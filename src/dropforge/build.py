@@ -120,7 +120,6 @@ def build(
         a=dict(_AWS_ACCT_ID_=aws_id, ),
         b=dict(_BASE_IMG_VERSION_=base_img_ver_used, ),
         c=dict(_GTIHUB_SHA_=gitsha, ),
-        d=dict(buildargs=bargs, ),
     )
 
     def dockerfiler() -> bytes:
@@ -145,7 +144,11 @@ def build(
     if gitsha:
         bargs.update(upd['c'])
     if bargs:
-        kwargs.update(upd['d'])
+        kwargs.update(
+            dict(
+                buildargs=bargs, 
+            )
+        )
 
     if _build(**kwargs):
         return False
