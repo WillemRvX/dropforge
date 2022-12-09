@@ -43,8 +43,7 @@ jobs:
     - name: Build & Push Test ECR Base Image
       if: github.event_name == 'push'
       run: >
-        forge
-        baseimage
+        forge baseimage
         --ecr-url ${{ steps.ecr-login.outputs.registry }}
         --env dv
         --gitsha ${{ github.sha }}
