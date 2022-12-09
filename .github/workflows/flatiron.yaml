@@ -11,6 +11,7 @@ on:
 
 env:
   ECR_REPO: ${{ secrets.ECR_REPO }}
+  TESTS: ./tests/systems
 
 
 jobs:
@@ -44,7 +45,7 @@ jobs:
       run: >
         forge
         baseimage
-        --ecr-reg-full-url ${{ steps.ecr-login.outputs.registry }}
+        --ecr-url ${{ steps.ecr-login.outputs.registry }}
         --env dv
         --gitsha ${{ github.sha }}
-        --project-dir ./tests/systems/ecr_base_img
+        --where $TESTS/ecr_baseimg
