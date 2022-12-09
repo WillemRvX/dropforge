@@ -38,3 +38,13 @@ jobs:
     - name: Login to Amazon ECR
       id: ecr-login
       uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build & Push Test ECR Base Image
+      if: github.event_name == 'push'
+      run: >
+        forge
+        baseimage
+        --ecr-reg-full-url ${{ steps.ecr-login.outputs.registry }}
+        --env dv
+        --gitsha ${{ github.sha }}
+        --project-dir ./tests/systems/ecr_base_img
