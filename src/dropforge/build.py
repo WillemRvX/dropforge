@@ -30,7 +30,8 @@ def dockerfile_child(base_img_url: str, dir: str) -> BytesIO:
             if line.find('FROM') != -1:
                 line = line.replace('{}', base_img_url)
             data += line
-        with open(f'{dir}/{DFILE}', 'w') as fout:
+        with open(
+            f'{dir}/{DFILE}', 'w') as fout:
             fout.write(data)
     return BytesIO(
         data.encode('utf-8')
@@ -53,7 +54,8 @@ def dockerfile_base(dir: str, img_name: str) -> BytesIO:
                     img_name
                 )  
             data += line
-        with open(f'{dir}/{DFILE}', 'w') as fout:
+        with open(
+            f'{dir}/{DFILE}', 'w') as fout:
             fout.write(data)
     return BytesIO(
         data.encode('utf-8')
@@ -98,7 +100,7 @@ def _build(path: str, tag: str, buildargs: dict=dict()) -> None:
                         return False
             except JSONDecodeError:
                 pass
-    return False
+    return True
 
 
 def build(
@@ -112,33 +114,43 @@ def build(
     gitsha: str=str(),
     img_name: str=str()
 ) -> tuple:
+
     based, bargs = f'{base_img_name_used}-{base_img_ver_used}', dict()
+    upd = dict(
+        a=dict(_AWS_ACCT_ID_=aws_id, ),
+        b=dict(_BASE_IMG_VERSION_=base_img_ver_used, ),
+        c=dict(_GTIHUB_SHA_=gitsha, ),
+        d=dict(buildargs=bargs, ),
+    )
 
     def dockerfiler() -> bytes:
         return (
             dockerfile_child(dir, base_img_used_url)
             if base_img_name_used 
-            else dockerfile_base(dir, img_name)
+            else dockerfile_base(
+                dir, 
+                img_name
+            )
         )
 
     dockerfiler()
-    kwargs = dict(
-        path=dir, 
-        tag=tag, 
-    )
+    kwargs = dict(path=dir, tag=tag, )
 
     if aws_id:
-        base_img_used_url = f'{aws_id}.{registry}/{repo}:{based}'
-        bargs.update(dict(_AWS_ACCT_ID_=aws_id, ))
+        base_img_used_url = \
+            f'{aws_id}.{registry}/{repo}:{based}'
+        bargs.update(upd['a'])
     if base_img_ver_used:
-        bargs.update(dict(_BASE_IMG_VERSION_=base_img_ver_used, ))
+        bargs.update(upd['b'])
     if gitsha:
-        bargs.update(dict(_GTIHUB_SHA_=gitsha, ))
+        bargs.update(upd['c'])
     if bargs:
-        kwargs.update(dict(buildargs=bargs, ))
+        kwargs.update(upd['d'])
 
-    _build(**kwargs)
-    return False
+    if _build(**kwargs):
+        return False
+    else:
+        return False
 
 
 def list_images(image_tag: str) -> list:
