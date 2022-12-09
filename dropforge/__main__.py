@@ -40,9 +40,9 @@ def scaffold(proj_loc: str) -> None:
 
 def baseimage(args: argparse) -> None:
     build_a_baseimage(
-        dir=args.project_dir.replace('~', expanduser('~')),
+        dir=args.where.replace('~', expanduser('~')),
         env=args.env,
-        ecr_reg_full_url=args.ecr_reg_full_url,
+        ecr_reg_full_url=args.ecr_url,
         gitsha=args.gitsha
     )
 
@@ -57,13 +57,13 @@ def makeitso(args: argparse) -> None:
 
 def args(what: str) -> list:
     baseimg = [
-        '--project-dir', 
+        '--where', 
         '--env',
-        '--ecr-reg-full-url',
+        '--ecr-url',
         '--gitsha',
     ]
     inits = [
-        '--localrepo-dir', 
+        '--where', 
         '--name', 
     ]
     return dict(
@@ -73,7 +73,7 @@ def args(what: str) -> list:
 
 
 OPTIONALS = {
-    '--ecr-reg-full-url',
+    '--ecr-url',
     '--gitsha',
 }
 WHATS = dict(
