@@ -1,21 +1,12 @@
-name:
+name: child_ecr
 build_deploy_dev: false
 build_deploy_qa: false
 build_deploy_prod: false
-base_image_name:          # optional
-base_image_version:       # optional
-base_image_name_used:     # optional
-base_image_version_used:  # optional
-container_registry:
-container_repo:           # optional
-image_name:
-region:
-aws_log_group:            # optional
-ecs_exec_role_arn:        # optional
-ecs_launch_type:          # optional
-ecs_network_mode:         # optional
-ecs_netconf_secret_name:  # optional
-ecs_task_role:            # optional
-gcp_project_id:           # optional 
+base_image_name_used: ethelease
+base_image_version_used: 0.0.0
+container_registry: dkr.ecr.us-east-1.amazonaws.com
+container_repo: containerbean
+image_name: etheldove
+region: us-east-1
 args:
   key: value
