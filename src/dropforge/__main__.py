@@ -40,7 +40,7 @@ def scaffold(proj_loc: str) -> None:
 
 def baseimage(args: argparse) -> None:
     build_a_baseimage(
-        dir=args.project_dir,
+        dir=args.project_dir.replace('~', expanduser('~')),
         env=args.env,
         ecr_reg_full_url=args.ecr_reg_full_url,
         gitsha=args.gitsha
