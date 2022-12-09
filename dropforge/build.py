@@ -42,7 +42,7 @@ SPLITS = '-'
 def basedonfiles():
     path = str(Path(__file__)).split('/')
     path.pop()
-    return f'{"/".join(path)}/basedonfiles'
+    return f'{"/".join(path)}/pckgdata'
 
 
 def dockerfile_child(base_img_url: str, dir: str) -> BytesIO:

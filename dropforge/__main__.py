@@ -11,7 +11,7 @@ from dropforge.build import build_a_baseimage
 
 
 def copy_basefiles(proj_loc: str) -> None:
-    whence = 'basedonfiles'
+    whence = 'pckgdata'
     files = ['forge.yaml', 'requirements.txt', 'setup.py']
     for f in files:
         goods = (
