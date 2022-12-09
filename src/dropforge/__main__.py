@@ -9,8 +9,8 @@ from pathlib import Path
 
 
 def copy_basefiles(proj_loc: str) -> None:
-    whence = 'basefiles'
-    files = ['forge.yaml', 'requirements.txt', ]
+    whence = 'basedonfiles'
+    files = ['forge.yaml', 'requirements.txt', 'setup.py']
     for f in files:
         goods = (
             pkgutil
