@@ -17,43 +17,47 @@ from dropforge.objs import tagurler
 
 
 BASEFILES = f'{os.getcwd()}/src/dropforge/basedonfiles'
+DFILE = 'Dockerfile'
 FORGE = 'forge.yaml'
 NOBUILD = 'Not building the image...'
 SPLITS = '-'
 
 
-def dockerfile_child(base_img_url: str) -> BytesIO:
-    with open(f'{BASEFILES}/Dockerfile') as fin:
+def dockerfile_child(base_img_url: str, dir: str) -> BytesIO:
+    with open(f'{BASEFILES}/{DFILE}') as fin:
         data = ''
-        for line in fin.readlines():
+        for line in fin.readlines(): 
             if line.find('FROM') != -1:
                 line = line.replace('{}', base_img_url)
             data += line
+        with open(f'{dir}/{DFILE}', 'w') as fout:
+            fout.write(data)
     return BytesIO(
         data.encode('utf-8')
     )
 
 
-def dockerfile_base(img_name: str) -> BytesIO:
-    with open(f'{BASEFILES}/Dockerfile_Based') as fin:
+def dockerfile_base(dir: str, img_name: str) -> BytesIO:
+    with open(f'{BASEFILES}/{DFILE}_Based') as fin:
         data = ''
-        for line in fin.readlines():
+        for line in fin.readlines():              
             if line.find('WORKDIR') != -1:
                 line = line.replace(
                     '{}', 
                     img_name
                 )
             if line.find('COPY') != -1:
-                line = line.replace(
+                line = line \
+                .replace(
                     '{}', 
                     img_name
-                )
+                )  
             data += line
-    _data = BytesIO(
+        with open(f'{dir}/{DFILE}', 'w') as fout:
+            fout.write(data)
+    return BytesIO(
         data.encode('utf-8')
-    )
-    print(data)
-    return _data
+    )   
 
 
 def popen(comm: list) -> bool:
@@ -67,13 +71,12 @@ def popen(comm: list) -> bool:
         return False
 
 
-def _build(fileobj: bytes, tag: str, path: str=str(), build_args: dict=dict()) -> None:
+def _build(path: str, tag: str, buildargs: dict=dict()) -> None:
     cli = APIClient(base_url='unix://var/run/docker.sock')
     for line in cli.build(
-        fileobj=fileobj,
-        # path=path,
+        path=path,
         rm=True,
-        buildargs=build_args,
+        buildargs=buildargs,
         tag=tag
     ):
         line = line.decode('utf-8')
@@ -91,12 +94,15 @@ def _build(fileobj: bytes, tag: str, path: str=str(), build_args: dict=dict()) -
                             ''
                         )
                     )
+                    if stream.find('ERROR') != -1:
+                        return False
             except JSONDecodeError:
                 pass
-    print('Done!')
+    return False
 
 
 def build(
+    dir: str,
     registry: str,
     repo: str,
     tag: str, 
@@ -106,8 +112,21 @@ def build(
     gitsha: str=str(),
     img_name: str=str()
 ) -> tuple:
-    based = f'{base_img_name_used}-{base_img_ver_used}'
-    bargs = dict()
+    based, bargs = f'{base_img_name_used}-{base_img_ver_used}', dict()
+
+    def dockerfiler() -> bytes:
+        return (
+            dockerfile_child(dir, base_img_used_url)
+            if base_img_name_used 
+            else dockerfile_base(dir, img_name)
+        )
+        
+    dockerfiler()
+    kwargs = dict(
+        path=dir, 
+        tag=tag, 
+    )
+
     if aws_id:
         base_img_used_url = f'{aws_id}.{registry}/{repo}:{based}'
         bargs.update(dict(_AWS_ACCT_ID_=aws_id, ))
@@ -115,15 +134,9 @@ def build(
         bargs.update(dict(_BASE_IMG_VERSION_=base_img_ver_used, ))
     if gitsha:
         bargs.update(dict(_GTIHUB_SHA_=gitsha, ))
-    kwargs = dict(
-        fileobj=
-        dockerfile_child(base_img_used_url)
-        if base_img_name_used 
-        else dockerfile_base(img_name), 
-        tag=tag, 
-    )
     if bargs:
         kwargs.update(dict(buildargs=bargs, ))
+
     _build(**kwargs)
     return False
 
@@ -152,6 +165,7 @@ def push(built: bool, tag: str) -> bool:
 
 
 def dockerit(
+    dir: str,
     tag: str, 
     aws_id: str=str(),
     base_img_name_used: str=str(),
@@ -163,6 +177,7 @@ def dockerit(
 ) -> None:
     result = push(
         built=build(
+            dir,
             aws_id=aws_id if aws_id else str(),
             base_img_name_used=base_img_name_used if base_img_name_used else str(),
             base_img_ver_used=base_img_ver_used if base_img_ver_used else str(),
@@ -206,6 +221,7 @@ def up_version(img_tag: str, tags: list) -> bool:
 
 
 def build_steps(
+    dir: str,
     registry: str, 
     repo: str, 
     gitsha: str=str()
@@ -219,6 +235,7 @@ def build_steps(
 
     def base(img_name: str, tag: str) -> None:
         dockerit(
+            dir,
             tag=tag, 
             img_name=img_name
         )
@@ -291,6 +308,8 @@ def build_baseimage(
     *args
 ) -> None:
     path = f'{dir}/{FORGE}'
+    os.chdir(dir)
+    print(os.getcwd())
     with open(path) as forge:
         conf = yaml.safe_load(forge)
         registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
@@ -300,6 +319,7 @@ def build_baseimage(
         if not repo:
             repo = conf.get('gcp_project_id')
         build_steps(
+            dir,
             registry, 
             repo, 
             github_sha
