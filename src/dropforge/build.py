@@ -4,6 +4,7 @@ import json
 import os
 import yaml
 
+from collections import namedtuple
 from copy import deepcopy
 from distutils.version import StrictVersion
 from io import BytesIO
@@ -16,6 +17,20 @@ from docker import APIClient
 from semantic_version import Version as semver
 
 from dropforge.objs import tagurler
+
+
+Forger = namedtuple(
+    'Forger', (
+        'base_img_name_used',
+        'base_img_ver_used',
+        'build_it',
+        'img_name',
+        'img_ver',
+        'registry',
+        'repo',
+        'tag',
+    )
+)
 
 
 DFILE = 'Dockerfile'
@@ -309,17 +324,27 @@ def build_steps(
 
 
 def proc_conf(
-    path: str,
-    run_env: callable,
-    env: str
+    path: str, 
+    env: str, 
+    ecr_reg_full_url: str=str()
 ) -> None:
     with open(path) as forge:
         conf = yaml.safe_load(forge)
-        run_env[env](
-            img_tag=conf['image_name'],
-            build_img=conf.get(f'build_deploy_{env}'),
+        img_name, ver = conf['image_name'], conf['image_version']  
+        registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
+        repo = conf.get('container_repo')         
+        tag = f'{img_name}_{env}-{ver}' if env else f'{img_name}-{ver}'
+        if not repo:
+            repo = conf.get('gcp_project_id')
+        return Forger(
             base_img_name_used=conf.get('base_image_name_used'),
-            base_img_ver_used=conf.get('base_image_version_used')
+            base_img_ver_used=conf.get('base_image_version_used'),
+            build_it=conf.get(f'build_deploy_{env}'),
+            img_name=img_name,
+            img_ver=ver,
+            registry=registry,
+            repo=repo,
+            tag=tag
         )
 
 
@@ -330,40 +355,35 @@ def build_a_baseimage(
     gitsha: str=str(),
     *args
 ) -> None:
-    path = f'{dir}/{FORGE}'
-    os.chdir(dir)
-    with open(path) as forge:
-        conf = yaml.safe_load(forge)
-        registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
-        repo = conf.get('container_repo')        
-        img_name, ver = conf['image_name'], conf['image_version']
-        tag = f'{img_name}_{env}-{ver}' if env else f'{img_name}-{ver}'
-        if not repo:
-            repo = conf.get('gcp_project_id')
-        build_steps(
-            dir,
-            registry, 
-            repo, 
-            gitsha
-        )['base'](img_name, tag)
+    confs = proc_conf(f'{dir}/{FORGE}', env, ecr_reg_full_url)
+    build_steps(
+        dir,
+        confs.registry, 
+        confs.repo, 
+        gitsha
+    )['base'](
+        confs.img_name, 
+        confs.tag
+    )
 
 
-def build_image(
+def build_an_image(
     dir: str,
     env: str,
-    registry: str,
-    repo: str,
-    github_sha: str
+    ecr_reg_full_url: str=str(),
+    gitsha: str=str(),
 ) -> None:
-    proc_conf(
-        path=f'{dir}/{FORGE}',
-        buildpath=dir,
-        run_env=build_steps(
-            registry,
-            repo,
-            github_sha
-        ),
-        env=env
+    confs = proc_conf(f'{dir}/{FORGE}', env, ecr_reg_full_url)
+    build_steps(
+        dir,
+        confs.registry, 
+        confs.repo, 
+        gitsha
+    )[env]( 
+        confs.tag,
+        confs.build_it,
+        confs.base_img_name_used,
+        confs.base_img_ver_used
     )
 
 
@@ -375,7 +395,7 @@ def build_images(
     github_sha: str
 ) -> None:
     for dir in os.listdir(root):
-        build_image(
+        build_an_image(
             f'{root}/{dir}',
             env,
             registry,
