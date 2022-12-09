@@ -120,7 +120,7 @@ def build(
             if base_img_name_used 
             else dockerfile_base(dir, img_name)
         )
-        
+
     dockerfiler()
     kwargs = dict(
         path=dir, 
@@ -364,8 +364,4 @@ def build_images(
 
 if __name__ == '__main__':
 
-    build_baseimage(
-        dir=f'/Users/willchen/privspace/repos/dropforge/tests/systems/base_img_ecr',
-        env='dv',
-        github_sha='1b2b3',    
-    )
+    pass
