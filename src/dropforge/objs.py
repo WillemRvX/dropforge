@@ -72,8 +72,8 @@ class TagURL:
 def tagurler(
     img_tag: str,  
     registry: str, 
-    gitsha: str,
     gcp_proj_id: str=str(),
+    gitsha: str=str(),
     namespace: str=str(),
     repo: str=str()
 ) -> str:

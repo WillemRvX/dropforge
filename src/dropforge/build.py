@@ -280,13 +280,13 @@ def build_steps(
 
     def prod(
         img_tag: str, 
-        build_img: bool,     
+        build_it: bool,     
         base_img_name_used: str=str(),
         base_img_ver_used: str=str(), 
     ) -> None:
         nodice = 'Same version...  Not dockering it...'        
         if up_version(img_tag, list_images(img_tag)):
-            if  build_img:
+            if build_it:
                 dockerit(
                     tag=tagurler(img_tag, **tag_kwargs),
                     base_img_name_used=base_img_name_used,
@@ -298,13 +298,13 @@ def build_steps(
         else:
             print(nodice)
 
-    def dev(
+    def devqa(
         img_tag: str, 
-        build_img: bool,     
+        build_it: bool,     
         base_img_name_used: str=str(),
         base_img_ver_used: str=str(), 
     ) -> None:
-        if build_img:
+        if build_it:
             dockerit(
                 tag=tagurler(img_tag, **tag_kwargs),
                 base_img_name_used=base_img_name_used,
@@ -317,23 +317,22 @@ def build_steps(
 
     return dict(
         base=base,
-        dev=dev,
+        dev=devqa,
         prod=prod,
-        qa=dev,
+        qa=devqa,
     )
 
 
 def proc_conf(
     path: str, 
     env: str, 
-    ecr_reg_full_url: str=str()
+    ecr_reg_full_url: str=str(),
 ) -> None:
     with open(path) as forge:
         conf = yaml.safe_load(forge)
         img_name, ver = conf['image_name'], conf['image_version']  
         registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
-        repo = conf.get('container_repo')         
-        tag = f'{img_name}_{env}-{ver}' if env else f'{img_name}-{ver}'
+        repo = conf.get('container_repo')        
         if not repo:
             repo = conf.get('gcp_project_id')
         return Forger(
@@ -344,7 +343,7 @@ def proc_conf(
             img_ver=ver,
             registry=registry,
             repo=repo,
-            tag=tag
+            tag=f'{img_name}_{ver}'
         )
 
 
