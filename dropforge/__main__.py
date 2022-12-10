@@ -63,8 +63,8 @@ def args(what: str) -> list:
         '--gitsha',
     ]
     inits = [
-        '--where', 
         '--name', 
+        '--where', 
     ]
     return dict(
         baseimage=baseimg,
