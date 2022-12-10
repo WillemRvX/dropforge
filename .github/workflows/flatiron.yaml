@@ -40,7 +40,7 @@ jobs:
       id: ecr-login
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build & Push Test
+    - name: Build & Push Test Dev
       if: github.event_name == 'push'
       run: >
         forge baseimage
@@ -49,11 +49,10 @@ jobs:
         --gitsha ${{ github.sha }}
         --where $TESTS/ecr_baseimg
 
-    - name: Build & Push Test
+    - name: Build & Push Test Prod
       if: github.event_name == 'push'
       run: >
         forge baseimage
         --ecr-url ${{ steps.ecr-login.outputs.registry }}
         --env pr
-        --gitsha ${{ github.sha }}
         --where $TESTS/ecr_baseimg
