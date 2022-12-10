@@ -343,7 +343,7 @@ def proc_conf(
             img_ver=ver,
             registry=registry,
             repo=repo,
-            tag=f'{img_name}_{ver}'
+            tag=f'{img_name}-{ver}'
         )
 
 
