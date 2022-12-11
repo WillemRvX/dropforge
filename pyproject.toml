@@ -23,7 +23,7 @@ dependencies    = [
 ]
 description     = "This is a deployer"
 license         = { file = "LICENSE" }
-name            = "dropforge"
+name            = "forgedrop"
 keywords        = ["build", "container", "deploy", "deployment", ]
 readme          = "README.md"
 requires-python = ">=3.9"
@@ -31,11 +31,11 @@ version         = "0.0.0"
 
 
 [project.urls]
-Homepage = "https://github.com/WillemRvX/dropforge"
+Homepage = "https://github.com/WillemRvX/forgedrop"
 
 
 [project.scripts]
-forge = "dropforge.__main__:main"
+forge = "forgedrop.__main__:main"
 
 
 [tool.setuptools]

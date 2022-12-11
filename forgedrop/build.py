@@ -16,7 +16,7 @@ import docker
 from docker import APIClient
 from semantic_version import Version as semver
 
-from dropforge.objs import tagurler
+from forgedrop.objs import tagurler
 
 
 Forger = namedtuple(
