@@ -7,7 +7,7 @@ import pkgutil
 from os.path import expanduser
 from pathlib import Path
 
-from dropforge.build import build_a_baseimage
+from forgedrop.build import build_a_baseimage
 
 
 def copy_basefiles(proj_loc: str) -> None:
