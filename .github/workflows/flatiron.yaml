@@ -45,7 +45,7 @@ jobs:
     #   run: >
     #     forge baseimage
     #     --ecr-url ${{ steps.ecr-login.outputs.registry }}
-    #     --env dv
+    #     --env dev
     #     --gitsha ${{ github.sha }}
     #     --where $TESTS/ecr_baseimg
 
@@ -54,7 +54,7 @@ jobs:
     #   run: >
     #     forge baseimage
     #     --ecr-url ${{ steps.ecr-login.outputs.registry }}
-    #     --env pr
+    #     --env prod
     #     --where $TESTS/ecr_baseimg
 
     - name: Build & Push Test Dev
@@ -62,7 +62,7 @@ jobs:
       run: >
         forge image
         --ecr-url ${{ steps.ecr-login.outputs.registry }}
-        --env dv
+        --env dev
         --gitsha ${{ github.sha }}
         --where $TESTS/ecr_childimg
 
