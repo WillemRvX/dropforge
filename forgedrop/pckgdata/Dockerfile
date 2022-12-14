@@ -1,9 +1,18 @@
-ARG _AWS_ACCT_ID_
-ARG _BASE_IMG_VERSION_
 FROM {}
 COPY . /app
 WORKDIR /app
-ARG _AWS_ACCT_ID_
-ENV AWS_ACCT_ID=${_AWS_ACCT_ID_}
-RUN pip install -r requirements.txt \
-    && pip install .
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y g++ gcc git \
+    && pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && pip install . \
+    && apt-get purge -y --auto-remove g++ gcc git \
+    && apt-get clean \
+    && rm -rf \
+        /var/lib/apt/lists/* \
+        /tmp/* \
+        /var/tmp/* \
+        /usr/share/man \
+        /usr/share/doc \
+        /usr/share/doc-base

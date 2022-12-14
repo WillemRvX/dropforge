@@ -2,8 +2,7 @@ name:
 build_deploy_dev: false
 build_deploy_qa: false
 build_deploy_prod: false
-base_image_name_used:     # optional
-base_image_version_used:  # optional
+base_image_used:     # optional
 container_registry:
 container_repo:           # optional
 image_name:
@@ -15,5 +14,3 @@ ecs_network_mode:         # optional
 ecs_netconf_secret_name:  # optional
 ecs_task_role:            # optional
 gcp_project_id:           # optional 
-args:
-  key: value

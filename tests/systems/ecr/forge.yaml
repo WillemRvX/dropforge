@@ -1,13 +1,9 @@
-name: child_ecr
+name: ecr
 build_deploy_dev: true
 build_deploy_qa: false
 build_deploy_prod: false
-base_image_name_used: ethelease
-base_image_version_used: 0.0.0
+base_image_used: python:3.10.4-slim
 container_registry: dkr.ecr.us-east-1.amazonaws.com
 container_repo: containerbean
-image_name: etheldove
-image_version: 0.0.0
+image_name: etheldove:0.0.0
 region: us-east-1
-args:
-  key: value

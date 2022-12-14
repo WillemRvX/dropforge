@@ -1,3 +1,0 @@
-
-
-print('Something about Klingons...')

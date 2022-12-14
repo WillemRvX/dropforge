@@ -1,6 +1,6 @@
 FROM python:3.10.4-slim
-COPY . /{}
-WORKDIR /{}
+COPY . /app
+WORKDIR /app
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y g++ gcc git \
@@ -16,4 +16,3 @@ RUN apt-get update \
         /usr/share/man \
         /usr/share/doc \
         /usr/share/doc-base
-WORKDIR /

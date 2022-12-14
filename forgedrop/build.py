@@ -7,9 +7,7 @@ import yaml
 from collections import namedtuple
 from copy import deepcopy
 from distutils.version import StrictVersion
-from io import BytesIO
 from json.decoder import JSONDecodeError
-from pathlib import Path
 from subprocess import Popen, CalledProcessError
 
 import docker
@@ -21,11 +19,8 @@ from forgedrop.objs import tagurler
 
 Forger = namedtuple(
     'Forger', (
-        'base_img_name_used',
-        'base_img_ver_used',
+        'base_img_used',
         'build_it',
-        'img_name',
-        'img_ver',
         'registry',
         'repo',
         'tag',
@@ -33,55 +28,9 @@ Forger = namedtuple(
 )
 
 
-DFILE = 'Dockerfile'
 FORGE = 'forge.yaml'
 NOBUILD = 'Not building the image...'
 SPLITS = '-'
-
-
-def basedonfiles():
-    path = str(Path(__file__)).split('/')
-    path.pop()
-    return f'{"/".join(path)}/pckgdata'
-
-
-def dockerfile_child(base_img_url: str, dir: str) -> BytesIO:
-    with open(f'{basedonfiles()}/{DFILE}') as fin:
-        data = ''
-        for line in fin.readlines(): 
-            if line.find('FROM') != -1:
-                line = line.replace('{}', base_img_url)
-            data += line
-        with open(
-            f'{dir}/{DFILE}', 'w') as fout:
-            fout.write(data)
-    return BytesIO(
-        data.encode('utf-8')
-    )
-
-
-def dockerfile_base(dir: str, img_name: str) -> BytesIO:
-    with open(f'{basedonfiles()}/{DFILE}_Based') as fin:
-        data = ''
-        for line in fin.readlines():              
-            if line.find('WORKDIR') != -1:
-                line = line.replace(
-                    '{}', 
-                    img_name
-                )
-            if line.find('COPY') != -1:
-                line = line \
-                .replace(
-                    '{}', 
-                    img_name
-                )  
-            data += line
-        with open(
-            f'{dir}/{DFILE}', 'w') as fout:
-            fout.write(data)
-    return BytesIO(
-        data.encode('utf-8')
-    )   
 
 
 def popen(comm: list) -> bool:
@@ -125,55 +74,21 @@ def _build(path: str, tag: str, buildargs: dict=dict()) -> None:
     return True
 
 
-def build(
-    dir: str,
-    registry: str,
-    repo: str,
-    tag: str, 
-    aws_id: str=str(),
-    base_img_name_used: str=str(),
-    base_img_ver_used: str=str(), 
-    gitsha: str=str(),
-    img_name: str=str()
-) -> tuple:
-
-    based, bargs = f'{base_img_name_used}-{base_img_ver_used}', dict()
-    upd = dict(
-        a=dict(_AWS_ACCT_ID_=aws_id, ),
-        b=dict(_BASE_IMG_VERSION_=base_img_ver_used, ),
-        c=dict(_GTIHUB_SHA_=gitsha, ),
-    )
-
-    def dockerfiler(base_url: str) -> bytes:
-        return (
-            dockerfile_child(base_url, dir)
-            if base_img_name_used 
-            else dockerfile_base(
-                dir, 
-                img_name
+def build(dir: str, tag: str, gitsha: str=str()) -> bool:
+    bargs, kwargs = dict(), dict(path=dir, tag=tag, )
+    if gitsha:
+        bargs.update(
+            dict(
+                _GTISHA_=gitsha, 
             )
         )
-
-    kwargs = dict(path=dir, tag=tag, )
-
-    if aws_id:
-        base_img_used_url = \
-            f'{registry}/{repo}:{based}'
-        bargs.update(upd['a'])
-    if base_img_ver_used:
-        bargs.update(upd['b'])
-    if gitsha:
-        bargs.update(upd['c'])
     if bargs:
         kwargs.update(
             dict(
                 buildargs=bargs, 
             )
         )
-    
-    dockerfiler(base_img_used_url)
     if _build(**kwargs):
-        os.remove(f'{dir}/Dockerfile')
         return True
     else:
         return False
@@ -205,24 +120,12 @@ def push(built: bool, tag: str) -> bool:
 def dockerit(
     dir: str,
     tag: str, 
-    aws_id: str=str(),
-    base_img_name_used: str=str(),
-    base_img_ver_used: str=str(), 
     gitsha: str=str(),
-    img_name: str=str(),
-    registry: str=str(),
-    repo: str=str(),
 ) -> None:
     result = push(
-        built=build(
+        built = build(
             dir,
-            aws_id=aws_id if aws_id else str(),
-            base_img_name_used=base_img_name_used if base_img_name_used else str(),
-            base_img_ver_used=base_img_ver_used if base_img_ver_used else str(),
             gitsha=gitsha,
-            img_name=img_name,
-            registry=registry,
-            repo=repo,
             tag=tag
         ),
         tag=tag
@@ -271,26 +174,15 @@ def build_steps(
     dockerit_kwargs.pop('gitsha')
     dockerit_kwargs.update(dict(dir=dir, aws_id=aws_id, ))
 
-    def base(img_name: str, img_tag: str) -> None:
-        dockerit(
-            dir,
-            tag=tagurler(img_tag, **tag_kwargs), 
-            img_name=img_name
-        )
-
     def prod(
         img_tag: str, 
         build_it: bool,     
-        base_img_name_used: str=str(),
-        base_img_ver_used: str=str(), 
     ) -> None:
         nodice = 'Same version...  Not dockering it...'        
         if up_version(img_tag, list_images(img_tag)):
             if build_it:
                 dockerit(
                     tag=tagurler(img_tag, **tag_kwargs),
-                    base_img_name_used=base_img_name_used,
-                    base_img_ver_used=base_img_ver_used,
                     **dockerit_kwargs
                 )
             else:
@@ -301,14 +193,10 @@ def build_steps(
     def devqa(
         img_tag: str, 
         build_it: bool,     
-        base_img_name_used: str=str(),
-        base_img_ver_used: str=str(), 
     ) -> None:
         if build_it:
             dockerit(
                 tag=tagurler(img_tag, **tag_kwargs),
-                base_img_name_used=base_img_name_used,
-                base_img_ver_used=base_img_ver_used,
                 gitsha=gitsha[0:10],
                 **dockerit_kwargs
             )
@@ -316,63 +204,34 @@ def build_steps(
             print(NOBUILD)
 
     return dict(
-        base=base,
         dev=devqa,
         prod=prod,
         qa=devqa,
     )
 
 
-def proc_conf(
-    path: str, 
-    env: str, 
-    ecr_reg_full_url: str=str(),
-) -> None:
+def proc_conf(path: str, env: str) -> None:
     with open(path) as forge:
         conf = yaml.safe_load(forge)
-        img_name, ver = conf['image_name'], conf['image_version']  
-        registry = ecr_reg_full_url if ecr_reg_full_url else conf['container_registry']
+        img_name, registry = conf['image_name'], conf['container_registry']
         repo = conf.get('container_repo')        
         if not repo:
             repo = conf.get('gcp_project_id')
         return Forger(
-            base_img_name_used=conf.get('base_image_name_used'),
-            base_img_ver_used=conf.get('base_image_version_used'),
-            build_it=conf.get(f'build_deploy_{env}'),
-            img_name=img_name,
-            img_ver=ver,
+            base_img_name_used=conf.get('base_image_used'),
+            build_it=conf.get(f'build_{env}'),
             registry=registry,
             repo=repo,
-            tag=f'{img_name}-{ver}'
+            tag=img_name
         )
-
-
-def build_a_baseimage(
-    dir: str,
-    env: str,
-    ecr_reg_full_url: str=str(),
-    gitsha: str=str(),
-    *args
-) -> None:
-    confs = proc_conf(f'{dir}/{FORGE}', env, ecr_reg_full_url)
-    build_steps(
-        dir,
-        confs.registry, 
-        confs.repo, 
-        gitsha
-    )['base'](
-        confs.img_name, 
-        confs.tag
-    )
 
 
 def build_an_image(
     dir: str,
     env: str,
-    ecr_reg_full_url: str=str(),
     gitsha: str=str(),
 ) -> None:
-    confs = proc_conf(f'{dir}/{FORGE}', env, ecr_reg_full_url)
+    confs = proc_conf(f'{dir}/{FORGE}', env)
     build_steps(
         dir,
         confs.registry, 
@@ -381,8 +240,6 @@ def build_an_image(
     )[env]( 
         confs.tag,
         confs.build_it,
-        confs.base_img_name_used,
-        confs.base_img_ver_used
     )
 
 

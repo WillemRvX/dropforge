@@ -7,44 +7,12 @@ import pkgutil
 from os.path import expanduser
 from pathlib import Path
 
-from forgedrop.build import build_a_baseimage, build_an_image
+from forgedrop.build import build_an_image
+from forgedrop.docker import dockerfile
 
 
-def copy_basefiles(proj_loc: str) -> None:
-    whence = 'pckgdata'
-    files = ['forge.yaml', 'requirements.txt', 'setup.py']
-    for f in files:
-        goods = (
-            pkgutil
-            .get_data(__name__, f'{whence}/{f}')
-            .decode()
-        )
-        with open(f'{proj_loc}/{f}', 'w') as fout:
-            fout.write(goods)
-
-
-def project_location(name: str, where: str) -> str:
-    loc = where.replace('~', expanduser('~'))
-    return f'{loc}/{name}'
-
-
-def scaffold(proj_loc: str) -> None:
-    subpaths, kwargs = dict(workspace='some.py', ), dict(exist_ok=False)
-    os.makedirs(proj_loc, **kwargs)
-    for p, f in subpaths.items():
-        sub = f'{proj_loc}/{p}'
-        os.makedirs(sub, **kwargs)        
-        filer = Path(f'{sub}/{f}')
-        filer.touch(**kwargs)
-
-
-def baseimage(args: argparse) -> None:
-    build_a_baseimage(
-        dir=args.where.replace('~', expanduser('~')),
-        env=args.env,
-        ecr_reg_full_url=args.ecr_url,
-        gitsha=args.gitsha
-    )
+def dockerfiler(args: argparse) -> None:
+    dockerfile(args.where)
 
 
 def image(args: argparse) -> None:
@@ -57,6 +25,31 @@ def image(args: argparse) -> None:
 
 
 def makeitso(args: argparse) -> None:
+    def copy_basefiles(proj_loc: str) -> None:
+        whence = 'pckgdata'
+        files = ['forge.yaml', 'requirements.txt', 'setup.py']
+        for f in files:
+            goods = (
+                pkgutil
+                .get_data(__name__, f'{whence}/{f}')
+                .decode()
+            )
+            with open(f'{proj_loc}/{f}', 'w') as fout:
+                fout.write(goods)
+
+    def project_location(name: str, where: str) -> str:
+        loc = where.replace('~', expanduser('~'))
+        return f'{loc}/{name}'
+
+    def scaffold(proj_loc: str) -> None:
+        subpaths, kwargs = dict(workspace='some.py', ), dict(exist_ok=False)
+        os.makedirs(proj_loc, **kwargs)
+        for p, f in subpaths.items():
+            sub = f'{proj_loc}/{p}'
+            os.makedirs(sub, **kwargs)        
+            filer = Path(f'{sub}/{f}')
+            filer.touch(**kwargs)
+    
     if args:
         where, name  = args.localrepo_dir, args.name
         proj_loc = project_location(name=name, where=where)
@@ -65,9 +58,9 @@ def makeitso(args: argparse) -> None:
 
 
 def args(what: str) -> list:
+    dockerfile = ['--where', ]
     img = [
         '--env',
-        '--ecr-url',
         '--gitsha',
         '--where', 
     ]
@@ -76,19 +69,16 @@ def args(what: str) -> list:
         '--where', 
     ]
     return dict(
-        baseimage=img,
+        dockerfile=dockerfile,
         image=img,
         init=inits, 
     )[what]
 
 
-OPTIONALS = {
-    '--ecr-url',
-    '--gitsha',
-}
+OPTIONALS = {'--gitsha', }
 CALLABLES = dict(
+    dockerfile=dockerfiler,
     image=image,
-    baseimage=baseimage,
     init=makeitso, 
 )
 
