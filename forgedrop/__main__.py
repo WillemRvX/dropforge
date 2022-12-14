@@ -19,7 +19,6 @@ def image(args: argparse) -> None:
     build_an_image(
         dir=args.where.replace('~', expanduser('~')),
         env=args.env,
-        ecr_reg_full_url=args.ecr_url,
         gitsha=args.gitsha
     )
 

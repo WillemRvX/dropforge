@@ -168,11 +168,12 @@ def build_steps(
     gitsha: str=str()
 ) -> dict:
 
-    aws_id = check_aws_id(registry)
     tag_kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
     dockerit_kwargs = deepcopy(tag_kwargs)
     dockerit_kwargs.pop('gitsha')
-    dockerit_kwargs.update(dict(dir=dir, aws_id=aws_id, ))
+    dockerit_kwargs.pop('registry')
+    dockerit_kwargs.pop('repo')
+    dockerit_kwargs.update(dict(dir=dir, ))
 
     def prod(
         img_tag: str, 
@@ -218,7 +219,7 @@ def proc_conf(path: str, env: str) -> None:
         if not repo:
             repo = conf.get('gcp_project_id')
         return Forger(
-            base_img_name_used=conf.get('base_image_used'),
+            base_img_used=conf.get('base_image_used'),
             build_it=conf.get(f'build_{env}'),
             registry=registry,
             repo=repo,
