@@ -57,13 +57,13 @@ def makeitso(args: argparse) -> None:
 
 def args(what: str) -> list:
     baseimg = [
-        '--where', 
         '--env',
         '--ecr-url',
         '--gitsha',
+        '--where', 
     ]
     inits = [
-        '--name', 
+        '--name',
         '--where', 
     ]
     return dict(
