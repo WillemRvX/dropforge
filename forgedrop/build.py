@@ -146,7 +146,7 @@ def build(
 
     def dockerfiler(base_url: str) -> bytes:
         return (
-            dockerfile_child(dir, base_url)
+            dockerfile_child(base_url, dir)
             if base_img_name_used 
             else dockerfile_base(
                 dir, 
