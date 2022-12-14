@@ -230,12 +230,15 @@ def proc_conf(path: str, env: str) -> None:
 def build_an_image(
     dir: str,
     env: str,
+    aws_acct_id: str=str(),
     gitsha: str=str(),
 ) -> None:
     confs = proc_conf(f'{dir}/{FORGE}', env)
     build_steps(
         dir,
-        confs.registry, 
+        f'{aws_acct_id}.{confs.registry}' 
+            if aws_acct_id 
+            else confs.registry, 
         confs.repo, 
         gitsha
     )[env]( 
@@ -245,18 +248,16 @@ def build_an_image(
 
 
 def build_images(
+    root_dir: str,
     env: str,
-    registry: str,
-    repo: str,
-    root: str,
-    github_sha: str
+    aws_acct_id: str=str(),
+    github_sha: str=str()
 ) -> None:
-    for dir in os.listdir(root):
+    for dir in os.listdir(root_dir):
         build_an_image(
-            f'{root}/{dir}',
+            f'{root_dir}/{dir}',
             env,
-            registry,
-            repo,
+            aws_acct_id,
             github_sha
         )
 

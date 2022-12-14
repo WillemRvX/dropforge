@@ -17,6 +17,7 @@ def dockerfiler(args: argparse) -> None:
 
 def image(args: argparse) -> None:
     build_an_image(
+        aws_acct_id=args.aws_acct_id,
         dir=args.where.replace('~', expanduser('~')),
         env=args.env,
         gitsha=args.gitsha
@@ -59,6 +60,7 @@ def makeitso(args: argparse) -> None:
 def args(what: str) -> list:
     dockerfile = ['--where', ]
     img = [
+        '--aws-acct-id',
         '--env',
         '--gitsha',
         '--where', 
@@ -74,7 +76,7 @@ def args(what: str) -> list:
     )[what]
 
 
-OPTIONALS = {'--gitsha', }
+OPTIONALS = {'--aws-acct-id', '--gitsha', }
 CALLABLES = dict(
     dockerfile=dockerfiler,
     image=image,
