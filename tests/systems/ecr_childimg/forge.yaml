@@ -1,5 +1,5 @@
 name: child_ecr
-build_deploy_dev: false
+build_deploy_dev: true
 build_deploy_qa: false
 build_deploy_prod: false
 base_image_name_used: ethelease
