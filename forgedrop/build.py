@@ -158,7 +158,7 @@ def build(
 
     if aws_id:
         base_img_used_url = \
-            f'{aws_id}.{registry}/{repo}:{based}'
+            f'{registry}/{repo}:{based}'
         bargs.update(upd['a'])
     if base_img_ver_used:
         bargs.update(upd['b'])
