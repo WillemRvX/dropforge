@@ -235,7 +235,7 @@ def dockerit(
 
 
 def check_aws_id(registry: str) -> str:
-    return registry.split('.')[0] if registry.find('erc') != - 1 else str()
+    return registry.split('.')[0] if registry.find('ecr') != - 1 else str()
 
 
 def up_version(img_tag: str, tags: list) -> bool:
@@ -373,7 +373,6 @@ def build_an_image(
     gitsha: str=str(),
 ) -> None:
     confs = proc_conf(f'{dir}/{FORGE}', env, ecr_reg_full_url)
-    print(confs.registry)
     build_steps(
         dir,
         confs.registry, 
