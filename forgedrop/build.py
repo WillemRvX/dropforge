@@ -144,9 +144,9 @@ def build(
         c=dict(_GTIHUB_SHA_=gitsha, ),
     )
 
-    def dockerfiler(base_img_used_url: str) -> bytes:
+    def dockerfiler(base_url: str) -> bytes:
         return (
-            dockerfile_child(dir, base_img_used_url)
+            dockerfile_child(dir, base_url)
             if base_img_name_used 
             else dockerfile_base(
                 dir, 
