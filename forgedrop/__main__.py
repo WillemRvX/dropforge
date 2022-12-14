@@ -7,7 +7,7 @@ import pkgutil
 from os.path import expanduser
 from pathlib import Path
 
-from forgedrop.build import build_a_baseimage
+from forgedrop.build import build_a_baseimage, build_an_image
 
 
 def copy_basefiles(proj_loc: str) -> None:
@@ -47,6 +47,15 @@ def baseimage(args: argparse) -> None:
     )
 
 
+def image(args: argparse) -> None:
+    build_an_image(
+        dir=args.where.replace('~', expanduser('~')),
+        env=args.env,
+        ecr_reg_full_url=args.ecr_url,
+        gitsha=args.gitsha
+    )
+
+
 def makeitso(args: argparse) -> None:
     if args:
         where, name  = args.localrepo_dir, args.name
@@ -56,7 +65,7 @@ def makeitso(args: argparse) -> None:
 
 
 def args(what: str) -> list:
-    baseimg = [
+    img = [
         '--env',
         '--ecr-url',
         '--gitsha',
@@ -67,7 +76,7 @@ def args(what: str) -> list:
         '--where', 
     ]
     return dict(
-        baseimage=baseimg,
+        image=img,
         init=inits, 
     )[what]
 
@@ -76,15 +85,16 @@ OPTIONALS = {
     '--ecr-url',
     '--gitsha',
 }
-WHATS = dict(
+CALLABLES = dict(
+    image=image,
     baseimage=baseimage,
     init=makeitso, 
 )
 
 
 def iter_subpars(subpars: argparse) -> None:
-    subparsers = {k: None for k in WHATS}
-    for what in WHATS:
+    subparsers = {k: None for k in CALLABLES}
+    for what in CALLABLES:
         subparsers[what] = subpars.add_parser(what)
         for arg in args(what):
             req = True
@@ -97,7 +107,9 @@ def iter_subpars(subpars: argparse) -> None:
                 )
         subparsers[what] \
             .set_defaults(
-                func=WHATS[what]
+                func=CALLABLES[
+                    what
+                ]
             )
 
 

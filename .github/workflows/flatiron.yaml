@@ -49,10 +49,20 @@ jobs:
     #     --gitsha ${{ github.sha }}
     #     --where $TESTS/ecr_baseimg
 
-    - name: Build & Push Test Prod
+    # - name: Build & Push Test Prod
+    #   if: github.event_name == 'push'
+    #   run: >
+    #     forge baseimage
+    #     --ecr-url ${{ steps.ecr-login.outputs.registry }}
+    #     --env pr
+    #     --where $TESTS/ecr_baseimg
+
+    - name: Build & Push Test Dev
       if: github.event_name == 'push'
       run: >
-        forge baseimage
+        forge image
         --ecr-url ${{ steps.ecr-login.outputs.registry }}
-        --env pr
-        --where $TESTS/ecr_baseimg
+        --env dv
+        --gitsha ${{ github.sha }}
+        --where $TESTS/ecr_childimg
+
