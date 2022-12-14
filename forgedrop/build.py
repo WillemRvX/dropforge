@@ -269,7 +269,7 @@ def build_steps(
     tag_kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
     dockerit_kwargs = deepcopy(tag_kwargs)
     dockerit_kwargs.pop('gitsha')
-    dockerit_kwargs.update(dict(aws_id=aws_id, ))
+    dockerit_kwargs.update(dict(dir=dir, aws_id=aws_id, ))
 
     def base(img_name: str, img_tag: str) -> None:
         dockerit(
