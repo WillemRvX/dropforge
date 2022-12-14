@@ -305,7 +305,6 @@ def build_steps(
         base_img_ver_used: str=str(), 
     ) -> None:
         if build_it:
-            print(aws_id)
             dockerit(
                 tag=tagurler(img_tag, **tag_kwargs),
                 base_img_name_used=base_img_name_used,
@@ -374,6 +373,7 @@ def build_an_image(
     gitsha: str=str(),
 ) -> None:
     confs = proc_conf(f'{dir}/{FORGE}', env, ecr_reg_full_url)
+    print(confs.registry)
     build_steps(
         dir,
         confs.registry, 
