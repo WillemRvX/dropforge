@@ -144,7 +144,7 @@ def build(
         c=dict(_GTIHUB_SHA_=gitsha, ),
     )
 
-    def dockerfiler() -> bytes:
+    def dockerfiler(base_img_used_url: str) -> bytes:
         return (
             dockerfile_child(dir, base_img_used_url)
             if base_img_name_used 
@@ -154,7 +154,6 @@ def build(
             )
         )
 
-    dockerfiler()
     kwargs = dict(path=dir, tag=tag, )
 
     if aws_id:
@@ -171,7 +170,8 @@ def build(
                 buildargs=bargs, 
             )
         )
-
+    
+    dockerfiler(base_img_used_url)
     if _build(**kwargs):
         os.remove(f'{dir}/Dockerfile')
         return True
