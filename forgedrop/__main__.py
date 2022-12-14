@@ -76,6 +76,7 @@ def args(what: str) -> list:
         '--where', 
     ]
     return dict(
+        baseimage=img,
         image=img,
         init=inits, 
     )[what]
