@@ -1,16 +1,10 @@
 name:
-build_deploy_dev: false
-build_deploy_qa: false
-build_deploy_prod: false
-base_image_used:     # optional
+build_dev: false
+build_qa: false
+build_prod: false
+base_image_used:     
 container_registry:
-container_repo:           # optional
+container_repo:     # optional
+gcp_project_id:     # optional 
 image_name:
 region:
-aws_log_group:            # optional
-ecs_exec_role_arn:        # optional
-ecs_launch_type:          # optional
-ecs_network_mode:         # optional
-ecs_netconf_secret_name:  # optional
-ecs_task_role:            # optional
-gcp_project_id:           # optional 

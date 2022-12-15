@@ -7,41 +7,35 @@ from copy import deepcopy
 class TagURL:
 
     dockerhub_nspace = str()
-    dockerhub_repository = str()
-    ecr_repo = str()
     git_sha = str()
     gcp_proj = str()
     img_tag = str()
     reg = str()
+    repo = str()
     tag_path = str()    
 
     def dockerhub_url(self) -> str:   
-        base = f'{self.reg}/{self.dockerhub_repository}/{self.dockerhub_nspace}'
+        base = f'{self.reg}/{self.repo}/{self.dockerhub_nspace}'
         base = f'{base}:{self.img_tag}'
-        return (
-            f'{base}-{self.git_sha[0:10]}' 
-            if self.git_sha 
-            else f'{base}'
-        )
+        return self._handle_gitsha(base)
 
     def ecr_url(self) -> str:   
         base = f'{self.reg}/{self.ecr_repo}:{self.img_tag}'
+        return self._handle_gitsha(base)
+    
+    def gar_url(self) -> str:   
+        base = f'{self.reg}/{self.gcp_proj}/{self.repo}:{self.img_tag}'
+        return self._handle_gitsha(base)
+
+    def _handle_gitsha(self, base: str) -> str:
         return (
             f'{base}-{self.git_sha[0:10]}' 
             if self.git_sha 
             else base
         )
-
-    def gcr_url(self) -> str:   
-        base = f'{self.reg}/{self.gcp_proj}/{self.img_tag}'
-        return (
-            f'{base}-{self.git_sha[0:10]}' 
-            if self.git_sha 
-            else base
-        )
-
-    def aws_ecr_repo(self, val: str):
-        self.ecr_repo = val
+        
+    def container_repo(self, val: str):
+        self.repo = val
         return self
 
     def container_registry(self, val: str):
@@ -50,10 +44,6 @@ class TagURL:
     
     def dockerhub_namespace(self, val: str):
         self.dockerhub_nspace = val
-        return self
-
-    def dockerhub_repo(self, val: str):
-        self.dockerhub_repository = val
         return self
 
     def gcp_proj_id(self, val: str):
@@ -78,27 +68,16 @@ def tagurler(
     repo: str=str()
 ) -> str:
     url = deepcopy(
-        TagURL().container_registry(registry).image_tag(img_tag)
+        TagURL().container_registry(registry).container_repo(repo)
+        .image_tag(img_tag)
         .gitsha(gitsha)
     )
+    if gcp_proj_id:
+        return url.gcp_proj_id(gcp_proj_id).gar_url()
     if registry.find('ecr') != '-1':
-        return (
-            url
-            .aws_ecr_repo(repo)
-            .ecr_url()
-        )
-    elif registry.find('gcr') != '-1':
-        return (
-            url
-            .gcp_proj_id(gcp_proj_id)
-            .gcr_url()
-        )
-    else:
-        return (
-            url
-            .dockerhub_repo(repo)
-            .dockerhub_namespace(
-                namespace
-            )
-            .dockerhub_url()
-        )
+        return url.ecr_url()
+    return (
+        url
+        .dockerhub_namespace(namespace)
+        .dockerhub_url()
+    )

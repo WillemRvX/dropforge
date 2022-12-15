@@ -25,6 +25,7 @@ def image(args: argparse) -> None:
 
 
 def makeitso(args: argparse) -> None:
+
     def copy_basefiles(proj_loc: str) -> None:
         whence = 'pckgdata'
         files = ['forge.yaml', 'requirements.txt', 'setup.py']
@@ -51,7 +52,7 @@ def makeitso(args: argparse) -> None:
             filer.touch(**kwargs)
     
     if args:
-        where, name  = args.localrepo_dir, args.name
+        where, name  = args.where, args.name
         proj_loc = project_location(name=name, where=where)
         scaffold(proj_loc)
         copy_basefiles(proj_loc)
