@@ -39,3 +39,11 @@ jobs:
         registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
         username: _json_key
         password: ${{ secrets.GCP_CREDS }}
+
+    - name: Build & Push Test Dev
+      if: github.event_name == 'push'
+      run: >
+        forge image
+        --env dev
+        --gitsha ${{ github.sha }}
+        --where $TESTS/gar
