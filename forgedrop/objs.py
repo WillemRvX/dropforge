@@ -24,12 +24,12 @@ class TagURL:
         return self._handle_gitsha(base)
     
     def gar_url(self) -> str:   
-        base = f'{self.reg}/{self.gcp_proj}/{self.repo}:{self.img_tag}'
+        base = f'{self.reg}/{self.gcp_proj}/{self.repo}/{self.img_tag}'
         return self._handle_gitsha(base)
 
     def _handle_gitsha(self, base: str) -> str:
         return (
-            f'{base}-{self.git_sha[0:10]}' 
+            f'{base}:{self.git_sha[0:10]}' 
             if self.git_sha 
             else base
         )
