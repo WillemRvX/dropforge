@@ -12,6 +12,7 @@ on:
 env:
   CREDS: ${{ secrets.GCP_CREDS }}
   PROJ_ID: ${{ secrets.GCP_PROJ_ID }}
+  REGION: ${{ secrets.GCP_REGION }}
   REPO: ${{ secrets.GAR_REPO }}
   TESTS: ./tests/systems
 
@@ -39,6 +40,6 @@ jobs:
     - name: GAR Login
       uses: docker/login-action@v2
       with:
-        registry: '${{ env.GAR_REGION }}-docker.pkg.dev'
+        registry: $REGION-docker.pkg.dev
         username: _json_key
         password: $CREDS
