@@ -96,6 +96,9 @@ def build(dir: str, tag: str, gitsha: str=str()) -> bool:
         return False
 
 
+import os
+
+
 def latest_image(image_tag: str) -> list:
     kwargs = dict(filters=dict(reference=f'{image_tag}*'))
     x = list(
@@ -107,7 +110,7 @@ def latest_image(image_tag: str) -> list:
         # if img.tags[-1].find('latest') != '-1'
     )
     print(image_tag)
-    print(docker.APIClient(base_url=UNIX_SOCK).images())
+    print(os.getenv('DOCKER_HOST'))
     return x
 
 
