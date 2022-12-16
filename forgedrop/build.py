@@ -98,7 +98,8 @@ def build(dir: str, tag: str, gitsha: str=str()) -> bool:
 def latest_image(image_tag: str) -> list:
     kwargs = dict(filters=dict(reference=f'{image_tag}*'))
     x = list(
-        img.tags[-1].replace('latest', '').replace(':', '') for img in
+        # img.tags[-1].replace('latest', '').replace(':', '') for img in
+        img for img in
         docker
         .from_env()
         .images
