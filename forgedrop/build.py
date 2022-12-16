@@ -107,7 +107,7 @@ def latest_image(image_tag: str) -> list:
         # if img.tags[-1].find('latest') != '-1'
     )
     print(image_tag)
-    print(docker.from_env())
+    print(docker.DockerClient(base_url='unix://var/run/docker.sock').images.list())
     return x
 
 
