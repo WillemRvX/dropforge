@@ -95,16 +95,18 @@ def build(dir: str, tag: str, gitsha: str=str()) -> bool:
         return False
 
 
-def list_images(image_tag: str) -> list:
+def latest_image(image_tag: str) -> list:
     kwargs = dict(filters=dict(reference=f'{image_tag}*'))
-    return list(
+    x = list(
         img.tags[-1].replace('latest', '').replace(':', '') for img in
         docker
         .from_env()
         .images
         .list(**kwargs)
-        if img.tags[-1].find('latest') != '-1'
+        # if img.tags[-1].find('latest') != '-1'
     )
+    print(x)
+    return x
 
 
 def push(built: bool, tag: str) -> bool:
@@ -188,7 +190,7 @@ def build_steps(
 
     def prod(confs: Forger) -> None:
         nodice = 'Same version...  Not dockering it...'        
-        if up_version(confs.tag, list_images(confs.tag)):
+        if up_version(confs.tag, latest_image(confs.tag)):
             if confs.build_it:
                 dockerit(
                     tag=tagged,

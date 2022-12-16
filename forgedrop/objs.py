@@ -72,7 +72,6 @@ def tagurler(
         .image_tag(img_tag)
         .gitsha(gitsha)
     )
-    print(gcp_proj_id)
     if gcp_proj_id:
         return url.gcp_proj_id(gcp_proj_id).gar_url()
     if registry.find('ecr') != '-1':
