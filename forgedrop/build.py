@@ -103,11 +103,11 @@ def latest_image(image_tag: str) -> list:
         docker
         .from_env()
         .images
-        .list(name='etheldove-0.0.0')
+        .list(**kwargs)
         # if img.tags[-1].find('latest') != '-1'
     )
     print(image_tag)
-    print(x)
+    print(docker.from_env())
     return x
 
 
