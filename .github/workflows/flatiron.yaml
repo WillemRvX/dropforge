@@ -49,3 +49,11 @@ jobs:
         --env dev
         --gitsha ${{ github.sha }}
         --where $TESTS/ecr
+
+    - name: Build & Push Test Prod
+      if: github.event_name == 'push'
+      run: >
+        forge image
+        --aws-acct-id $AWS_ID
+        --env prod
+        --where $TESTS/ecr

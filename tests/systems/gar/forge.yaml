@@ -1,7 +1,7 @@
 name: gar
 build_dev: true
 build_qa: false
-build_prod: false
+build_prod: true
 base_image_used: python:3.10.4-slim
 container_registry: us-central1-docker.pkg.dev
 container_repo: containerbean

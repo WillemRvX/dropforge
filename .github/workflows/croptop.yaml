@@ -42,3 +42,10 @@ jobs:
         --env dev
         --gitsha ${{ github.sha }}
         --where $TESTS/gar
+
+    - name: Build & Push Test Prod
+      if: github.event_name == 'push'
+      run: >
+        forge image
+        --env prod
+        --where $TESTS/gar
