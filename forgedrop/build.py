@@ -32,6 +32,7 @@ Forger = namedtuple(
 FORGE = 'forge.yaml'
 NOBUILD = 'Not building the image...'
 SPLITS = '-'
+UNIX_SOCK = 'unix://var/run/docker.sock'
 
 
 def popen(comm: list) -> bool:
@@ -46,7 +47,7 @@ def popen(comm: list) -> bool:
 
 
 def _build(path: str, tag: str, buildargs: dict=dict()) -> None:
-    cli = APIClient(base_url='unix://var/run/docker.sock')
+    cli = APIClient(base_url=UNIX_SOCK)
     for line in cli.build(
         path=path,
         rm=True,
@@ -101,13 +102,12 @@ def latest_image(image_tag: str) -> list:
         # img.tags[-1].replace('latest', '').replace(':', '') for img in
         img for img in
         docker
-        .DockerClient(base_url='unix://var/run/docker.sock')
-        .images
-        .list(**kwargs)
+        .APIClient(base_url=UNIX_SOCK)
+        .images(**kwargs)
         # if img.tags[-1].find('latest') != '-1'
     )
     print(image_tag)
-    print(docker.DockerClient(base_url='unix://var/run/docker.sock').images.list())
+    print(docker.APIClient(base_url=UNIX_SOCK).images())
     return x
 
 
