@@ -106,6 +106,7 @@ def latest_image(image_tag: str) -> list:
         .list(**kwargs)
         # if img.tags[-1].find('latest') != '-1'
     )
+    print(image_tag)
     print(x)
     return x
 
