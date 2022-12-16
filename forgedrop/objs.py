@@ -20,7 +20,7 @@ class TagURL:
         return self._handle_gitsha(base)
 
     def ecr_url(self) -> str:   
-        base = f'{self.reg}/{self.ecr_repo}:{self.img_tag}'
+        base = f'{self.reg}/{self.repo}:{self.img_tag}'
         return self._handle_gitsha(base)
     
     def gar_url(self) -> str:   
@@ -29,11 +29,11 @@ class TagURL:
 
     def _handle_gitsha(self, base: str) -> str:
         return (
-            f'{base}:{self.git_sha[0:10]}' 
+            f'{base}-{self.git_sha[0:10]}' 
             if self.git_sha 
             else base
         )
-        
+
     def container_repo(self, val: str):
         self.repo = val
         return self
@@ -72,6 +72,7 @@ def tagurler(
         .image_tag(img_tag)
         .gitsha(gitsha)
     )
+    print(gcp_proj_id)
     if gcp_proj_id:
         return url.gcp_proj_id(gcp_proj_id).gar_url()
     if registry.find('ecr') != '-1':

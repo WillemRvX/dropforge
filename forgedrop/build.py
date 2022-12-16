@@ -21,6 +21,7 @@ Forger = namedtuple(
     'Forger', (
         'base_img_used',
         'build_it',
+        'gcp_proj_id',
         'registry',
         'repo',
         'tag',
@@ -137,8 +138,11 @@ def dockerit(
         )
 
 
-def check_aws_id(registry: str) -> str:
-    return registry.split('.')[0] if registry.find('ecr') != - 1 else str()
+def check_aws_id(confs: Forger, aws_id: str=str()) -> str:
+    return (f'{aws_id}.{confs.registry}' 
+        if aws_id 
+        else confs.registry  
+    )
 
 
 def up_version(img_tag: str, tags: list) -> bool:
@@ -162,28 +166,32 @@ def up_version(img_tag: str, tags: list) -> bool:
 
 
 def build_steps(
+    confs: Forger,
     dir: str,
-    registry: str, 
-    repo: str, 
+    aws_acct_id: str=str(),
     gitsha: str=str()
 ) -> dict:
 
-    tag_kwargs = dict(repo=repo, registry=registry, gitsha=gitsha, )
+    registry = check_aws_id(confs=confs, aws_id=aws_acct_id)
+    tag_kwargs = dict(repo=confs.repo, registry=registry, gitsha=gitsha, )
     dockerit_kwargs = deepcopy(tag_kwargs)
     dockerit_kwargs.pop('gitsha')
     dockerit_kwargs.pop('registry')
     dockerit_kwargs.pop('repo')
     dockerit_kwargs.update(dict(dir=dir, ))
 
-    def prod(
-        img_tag: str, 
-        build_it: bool,     
-    ) -> None:
+    tagged = tagurler(
+        img_tag=confs.tag, 
+        gcp_proj_id=confs.gcp_proj_id, 
+        **tag_kwargs
+    )
+
+    def prod(confs: Forger) -> None:
         nodice = 'Same version...  Not dockering it...'        
-        if up_version(img_tag, list_images(img_tag)):
-            if build_it:
+        if up_version(confs.img_tag, list_images(confs.img_tag)):
+            if confs.build_it:
                 dockerit(
-                    tag=tagurler(img_tag, **tag_kwargs),
+                    tag=tagged,
                     **dockerit_kwargs
                 )
             else:
@@ -191,13 +199,10 @@ def build_steps(
         else:
             print(nodice)
 
-    def devqa(
-        img_tag: str, 
-        build_it: bool,     
-    ) -> None:
-        if build_it:
+    def devqa(confs: Forger) -> None:
+        if confs.build_it:
             dockerit(
-                tag=tagurler(img_tag, **tag_kwargs),
+                tag=tagged,
                 gitsha=gitsha[0:10],
                 **dockerit_kwargs
             )
@@ -216,11 +221,11 @@ def proc_conf(path: str, env: str) -> None:
         conf = yaml.safe_load(forge)
         img_name, registry = conf['image_name'], conf['container_registry']
         repo = conf.get('container_repo')        
-        if not repo:
-            repo = conf.get('gcp_project_id')
+        gcp_proj = conf.get('gcp_project_id')
         return Forger(
             base_img_used=conf.get('base_image_used'),
             build_it=conf.get(f'build_{env}'),
+            gcp_proj_id=gcp_proj,
             registry=registry,
             repo=repo,
             tag=img_name
@@ -235,16 +240,11 @@ def build_an_image(
 ) -> None:
     confs = proc_conf(f'{dir}/{FORGE}', env)
     build_steps(
+        confs,
         dir,
-        f'{aws_acct_id}.{confs.registry}' 
-            if aws_acct_id 
-            else confs.registry, 
-        confs.repo, 
+        aws_acct_id,
         gitsha
-    )[env]( 
-        confs.tag,
-        confs.build_it,
-    )
+    )[env](confs)
 
 
 def build_images(
