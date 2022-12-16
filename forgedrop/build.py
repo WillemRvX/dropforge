@@ -163,7 +163,7 @@ def up_version(img_tag: str, tags: list) -> bool:
     if semver(curr_ver) > semver(latest):
         return True
     return False
-
+  
 
 def build_steps(
     confs: Forger,
@@ -188,7 +188,7 @@ def build_steps(
 
     def prod(confs: Forger) -> None:
         nodice = 'Same version...  Not dockering it...'        
-        if up_version(confs.img_tag, list_images(confs.img_tag)):
+        if up_version(confs.tag, list_images(confs.tag)):
             if confs.build_it:
                 dockerit(
                     tag=tagged,
