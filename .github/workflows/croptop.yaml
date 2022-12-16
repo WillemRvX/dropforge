@@ -35,7 +35,7 @@ jobs:
     - name: Authenticate to GGP
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: $CREDS
+        credentials_json: ${{ secrets.GCP_CREDS }}
     
     - name: GAR Login
       uses: docker/login-action@v2
