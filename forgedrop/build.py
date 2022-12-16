@@ -101,7 +101,7 @@ def latest_image(image_tag: str) -> list:
         # img.tags[-1].replace('latest', '').replace(':', '') for img in
         img for img in
         docker
-        .from_env()
+        .DockerClient(base_url='unix://var/run/docker.sock')
         .images
         .list(**kwargs)
         # if img.tags[-1].find('latest') != '-1'
