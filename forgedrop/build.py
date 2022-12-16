@@ -219,15 +219,13 @@ def build_steps(
 def proc_conf(path: str, env: str) -> None:
     with open(path) as forge:
         conf = yaml.safe_load(forge)
-        img_name, registry = conf['image_name'], conf['container_registry']
-        repo = conf.get('container_repo')        
-        gcp_proj = conf.get('gcp_project_id')
+        img_name, registry = conf['image_name'], conf['container_registry']      
         return Forger(
             base_img_used=conf.get('base_image_used'),
             build_it=conf.get(f'build_{env}'),
-            gcp_proj_id=gcp_proj,
+            gcp_proj_id=conf.get('gcp_project_id'),
             registry=registry,
-            repo=repo,
+            repo=conf.get('container_repo'),
             tag=img_name
         )
 
