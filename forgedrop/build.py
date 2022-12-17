@@ -96,24 +96,6 @@ def build(dir: str, tag: str, gitsha: str=str()) -> bool:
         return False
 
 
-import os
-
-
-def latest_image(image_tag: str) -> list:
-    kwargs = dict(filters=dict(reference=f'{image_tag}*'))
-    x = list(
-        # img.tags[-1].replace('latest', '').replace(':', '') for img in
-        img for img in
-        docker
-        .APIClient(base_url=UNIX_SOCK)
-        .images(**kwargs)
-        # if img.tags[-1].find('latest') != '-1'
-    )
-    print(image_tag)
-    print(os.getenv('DOCKER_HOST'))
-    return x
-
-
 def push(built: bool, tag: str) -> bool:
     if built:
         return popen(
@@ -194,17 +176,14 @@ def build_steps(
     )
 
     def prod(confs: Forger) -> None:
-        nodice = 'Same version...  Not dockering it...'        
-        if up_version(confs.tag, latest_image(confs.tag)):
-            if confs.build_it:
-                dockerit(
-                    tag=tagged,
-                    **dockerit_kwargs
-                )
-            else:
-                print(NOBUILD)
+        nodice = 'Same version...  Not dockering it...'
+        if confs.build_it:
+            dockerit(
+                tag=tagged,
+                **dockerit_kwargs
+            )
         else:
-            print(nodice)
+            print(NOBUILD)
 
     def devqa(confs: Forger) -> None:
         if confs.build_it:
