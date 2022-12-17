@@ -7,7 +7,7 @@ import pkgutil
 from os.path import expanduser
 from pathlib import Path
 
-from forgedrop.build import build_an_image
+from forgedrop.build import build_an_image, build_images
 from forgedrop.docker import dockerfile
 
 
@@ -21,6 +21,15 @@ def image(args: argparse) -> None:
         dir=args.where.replace('~', expanduser('~')),
         env=args.env,
         gitsha=args.gitsha
+    )
+
+
+def images(args: argparse) -> None:
+    build_images(
+        aws_acct_id=args.aws_acct_id,
+        env=args.env,
+        gitsha=args.gitsha,
+        root_dir=args.parent_dir
     )
 
 
@@ -60,11 +69,17 @@ def makeitso(args: argparse) -> None:
 
 def args(what: str) -> list:
     dockerfile = ['--where', ]
-    img = [
+    image = [
         '--aws-acct-id',
         '--env',
         '--gitsha',
         '--where', 
+    ]
+    images = [
+        '--aws-acct-id',
+        '--env',
+        '--gitsha',
+        '--parent-dir',         
     ]
     inits = [
         '--name',
@@ -72,7 +87,8 @@ def args(what: str) -> list:
     ]
     return dict(
         dockerfile=dockerfile,
-        image=img,
+        image=image,
+        images=images,
         init=inits, 
     )[what]
 
@@ -81,6 +97,7 @@ OPTIONALS = {'--aws-acct-id', '--gitsha', }
 CALLABLES = dict(
     dockerfile=dockerfiler,
     image=image,
+    images=images,
     init=makeitso, 
 )
 

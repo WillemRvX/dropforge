@@ -221,14 +221,14 @@ def build_images(
     root_dir: str,
     env: str,
     aws_acct_id: str=str(),
-    github_sha: str=str()
+    gitsha: str=str()
 ) -> None:
     for dir in os.listdir(root_dir):
         build_an_image(
             f'{root_dir}/{dir}',
             env,
             aws_acct_id,
-            github_sha
+            gitsha
         )
 
 

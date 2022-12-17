@@ -1,10 +1,11 @@
-name: gar
-build_dev: false
+name: gartwo
+build_dev: true
 build_qa: false
 build_prod: false
 base_image_used: python:3.10.4-slim
 container_registry: us-central1-docker.pkg.dev
 container_repo: containerbean
 gcp_project_id: willemworld
-image_name: etheldove-0.0.3
+image_name: dovetwo-0.0.0
 region: us-central1
+
