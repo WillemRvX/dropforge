@@ -156,10 +156,11 @@ def up_version(img_tag: str, tags: list) -> bool:
 
 def build_steps(
     confs: Forger,
+    env: str,
     dir: str,
     aws_acct_id: str=str(),
     gitsha: str=str()
-) -> dict:
+) -> None:
 
     registry = check_aws_id(confs=confs, aws_id=aws_acct_id)
     tag_kwargs = dict(repo=confs.repo, registry=registry, gitsha=gitsha, )
@@ -175,31 +176,16 @@ def build_steps(
         **tag_kwargs
     )
 
-    def prod(confs: Forger) -> None:
-        nodice = 'Same version...  Not dockering it...'
-        if confs.build_it:
-            dockerit(
-                tag=tagged,
-                **dockerit_kwargs
-            )
-        else:
-            print(NOBUILD)
-
-    def devqa(confs: Forger) -> None:
-        if confs.build_it:
-            dockerit(
-                tag=tagged,
-                gitsha=gitsha[0:10],
-                **dockerit_kwargs
-            )
-        else:
-            print(NOBUILD)
-
-    return dict(
-        dev=devqa,
-        prod=prod,
-        qa=devqa,
-    )
+    if confs.build_it:
+        dockerit(
+            tag=tagged,
+            gitsha=gitsha[0:10] 
+                if env in {'dev', 'qa', } 
+                else str(),
+            **dockerit_kwargs
+        )
+    else:
+        print(NOBUILD)
 
 
 def proc_conf(path: str, env: str) -> None:
@@ -225,10 +211,11 @@ def build_an_image(
     confs = proc_conf(f'{dir}/{FORGE}', env)
     build_steps(
         confs,
+        env,
         dir,
         aws_acct_id,
         gitsha
-    )[env](confs)
+    )
 
 
 def build_images(
