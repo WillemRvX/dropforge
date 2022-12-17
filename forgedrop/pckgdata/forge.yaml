@@ -1,0 +1,10 @@
+name:
+build_dev: false
+build_qa: false
+build_prod: false
+base_image_used:     
+container_registry:
+container_repo:     # optional
+gcp_project_id:     # optional 
+image_name:
+region:

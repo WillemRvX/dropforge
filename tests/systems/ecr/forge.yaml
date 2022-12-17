@@ -1,0 +1,9 @@
+name: ecr
+build_dev: false
+build_qa: false
+build_prod: false
+base_image_used: python:3.10.4-slim
+container_registry: dkr.ecr.us-east-1.amazonaws.com
+container_repo: containerbean
+image_name: etheldove-0.0.3
+region: us-east-1

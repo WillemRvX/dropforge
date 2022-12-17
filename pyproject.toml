@@ -1,0 +1,46 @@
+# pyproject.toml
+
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires      = [
+    "setuptools>=65.6.3", 
+    "wheel"
+]
+
+
+[project]
+authors         = [{ name = "Will Chen", email = "nowhere@nothing.com" }]
+classifiers     = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dependencies    = [
+    "docker>=6.0.1",
+    "PyYAML>=6.0", 
+    "semantic-version>=2.10.0", 
+]
+description     = "This is a deployer"
+license         = { file = "LICENSE" }
+name            = "forgedrop"
+keywords        = ["build", "container", "deploy", "deployment", ]
+readme          = "README.md"
+requires-python = ">=3.9"
+version         = "0.0.0"
+
+
+[project.urls]
+Homepage = "https://github.com/WillemRvX/forgedrop"
+
+
+[project.scripts]
+forge = "forgedrop.__main__:main"
+
+
+[tool.setuptools]
+include-package-data = true
+
+
+[tool.setuptools.package-data]
+forgedrop = ['pckgdata/*', ]
