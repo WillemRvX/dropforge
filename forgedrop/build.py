@@ -96,6 +96,10 @@ def build(dir: str, tag: str, gitsha: str=str()) -> bool:
         return False
 
 
+def pull_tags(repo: str) -> list:
+    return docker.APIClient(UNIX_SOCK).pull(repo, all_tags=True)
+
+
 def push(built: bool, tag: str) -> bool:
     if built:
         return popen(
@@ -177,6 +181,7 @@ def build_steps(
     )
 
     if confs.build_it:
+        print(pull_tags(confs.repo))
         dockerit(
             tag=tagged,
             gitsha=gitsha[0:10] 
