@@ -10,7 +10,6 @@ from distutils.version import StrictVersion
 from json.decoder import JSONDecodeError
 from subprocess import Popen, CalledProcessError
 
-import docker
 from docker import APIClient
 from semantic_version import Version as semver
 
