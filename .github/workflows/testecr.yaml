@@ -53,7 +53,7 @@ jobs:
         forge images
         --env dev
         --gitsha ${{ github.sha }}
-        --parent-dir $TESTS/manygcr
+        --parent-dir $TESTS/manyecr
 
     - name: Build & Push Test Prod
       if: github.event_name == 'push'
