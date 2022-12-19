@@ -80,9 +80,7 @@ def build(dir: str, tag: str, bargs: dict=dict(), gitsha: str=str()) -> bool:
     kwargs = dict(path=dir, tag=tag, )
     if bargs:
         kwargs.update(
-            dict(
-                buildargs=bargs, 
-            )
+            dict(buildargs=bargs, )
         )
     if gitsha:
         bargs.update(
@@ -115,7 +113,9 @@ def dockerit(
 ) -> None:
     result = push(
         built = build(
-            bargs=confs.buildargs,
+            bargs=confs.buildargs 
+                if confs.buildargs 
+                else dict(),
             dir=dir,
             gitsha=gitsha,
             tag=tag
