@@ -4,5 +4,6 @@ WORKDIR /app
 ARG _A_
 ARG _B_
 ARG _C_
-RUN pip install -r requirements.txt \
-    && pip install .
+RUN echo ${_A_}
+RUN echo ${_B_}
+RUN echo ${_C_}
