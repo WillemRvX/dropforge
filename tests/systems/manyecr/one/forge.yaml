@@ -1,10 +1,9 @@
-name: garone
-build_dev: false
+name: ecrone
+build_dev: true
 build_qa: false
 build_prod: false
 base_image_used: python:3.10.4-slim
-container_registry: us-central1-docker.pkg.dev
+container_registry: dkr.ecr.us-east-1.amazonaws.com
 container_repo: containerbean
-gcp_project_id: willemworld
 image_name: doveone-0.0.0
-region: us-central1
+region: us-east-1
