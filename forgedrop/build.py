@@ -19,6 +19,7 @@ from forgedrop.objs import tagurler
 Forger = namedtuple(
     'Forger', (
         'base_img_used',
+        'buildargs',
         'build_it',
         'gcp_proj_id',
         'registry',
@@ -75,18 +76,18 @@ def _build(path: str, tag: str, buildargs: dict=dict()) -> None:
     return True
 
 
-def build(dir: str, tag: str, gitsha: str=str()) -> bool:
-    bargs, kwargs = dict(), dict(path=dir, tag=tag, )
-    if gitsha:
-        bargs.update(
-            dict(
-                _GTISHA_=gitsha, 
-            )
-        )
+def build(dir: str, tag: str, bargs: dict=dict(), gitsha: str=str()) -> bool:
+    kwargs = dict(path=dir, tag=tag, )
     if bargs:
         kwargs.update(
             dict(
                 buildargs=bargs, 
+            )
+        )
+    if gitsha:
+        bargs.update(
+            dict(
+                _GTISHA_=gitsha, 
             )
         )
     if _build(**kwargs):
@@ -107,13 +108,15 @@ def push(built: bool, tag: str) -> bool:
 
 
 def dockerit(
+    confs: Forger,
     dir: str,
     tag: str, 
     gitsha: str=str(),
 ) -> None:
     result = push(
         built = build(
-            dir,
+            bargs=confs.buildargs,
+            dir=dir,
             gitsha=gitsha,
             tag=tag
         ),
@@ -163,12 +166,6 @@ def build_steps(
 
     registry = check_aws_id(confs=confs, aws_id=aws_acct_id)
     tag_kwargs = dict(repo=confs.repo, registry=registry, gitsha=gitsha, )
-    dockerit_kwargs = deepcopy(tag_kwargs)
-    dockerit_kwargs.pop('gitsha')
-    dockerit_kwargs.pop('registry')
-    dockerit_kwargs.pop('repo')
-    dockerit_kwargs.update(dict(dir=dir, ))
-
     tagged = tagurler(
         img_tag=confs.tag, 
         gcp_proj_id=confs.gcp_proj_id, 
@@ -177,11 +174,12 @@ def build_steps(
 
     if confs.build_it:
         dockerit(
-            tag=tagged,
+            confs=confs,
+            dir=dir,
             gitsha=gitsha[0:10] 
                 if env in {'dev', 'qa', } 
                 else str(),
-            **dockerit_kwargs
+            tag=tagged
         )
     else:
         print(NOBUILD)
@@ -193,6 +191,7 @@ def proc_conf(path: str, env: str) -> None:
         img_name, registry = conf['image_name'], conf['container_registry']      
         return Forger(
             base_img_used=conf.get('base_image_used'),
+            buildargs=conf.get('buildargs'),
             build_it=conf.get(f'build_{env}'),
             gcp_proj_id=conf.get('gcp_project_id'),
             registry=registry,
