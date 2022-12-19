@@ -1,4 +1,7 @@
 name:
+buildargs:
+  key1: val1
+  key2: val2
 build_dev: false
 build_qa: false
 build_prod: false
