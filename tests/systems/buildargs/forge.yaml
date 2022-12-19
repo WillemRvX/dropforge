@@ -1,8 +1,8 @@
 name: bargus
 buildargs:
-  _A_: 1
-  _B_: 2
-  _C_: 3
+  _A_: '1'
+  _B_: '2'
+  _C_: '3'
 build_dev: true
 build_qa: false
 build_prod: false

@@ -1,5 +1,5 @@
 name: ecrtwo
-build_dev: true
+build_dev: false
 build_qa: false
 build_prod: false
 base_image_used: python:3.10.4-slim
