@@ -1,0 +1,14 @@
+name: bargus
+buildargs:
+  _A_: '1'
+  _B_: '2'
+  _C_: '3'
+build_dev: false
+build_qa: false
+build_prod: false
+base_image_used: python:3.10.4-slim
+container_registry: us-central1-docker.pkg.dev
+container_repo: containerbean
+gcp_project_id: willemworld
+image_name: ethelbargs-0.0.0
+region: us-central1

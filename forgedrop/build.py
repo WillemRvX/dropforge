@@ -5,7 +5,6 @@ import os
 import yaml
 
 from collections import namedtuple
-from copy import deepcopy
 from distutils.version import StrictVersion
 from json.decoder import JSONDecodeError
 from subprocess import Popen, CalledProcessError
@@ -19,8 +18,8 @@ from forgedrop.objs import tagurler
 Forger = namedtuple(
     'Forger', (
         'base_img_used',
-        'buildargs',
         'build_it',
+        'conf_buildargs',
         'gcp_proj_id',
         'registry',
         'repo',
@@ -110,12 +109,16 @@ def dockerit(
     dir: str,
     tag: str, 
     gitsha: str=str(),
+    pbargs: dict=dict()
 ) -> None:
+    bargs = (
+        confs.conf_buildargs if confs.conf_buildargs 
+        else dict()
+    )
+    bargs.update(pbargs)    
     result = push(
         built = build(
-            bargs=confs.buildargs 
-                if confs.buildargs 
-                else dict(),
+            bargs=bargs,
             dir=dir,
             gitsha=gitsha,
             tag=tag
@@ -161,7 +164,8 @@ def build_steps(
     env: str,
     dir: str,
     aws_acct_id: str=str(),
-    gitsha: str=str()
+    gitsha: str=str(),
+    pbargs: dict=dict()
 ) -> None:
 
     registry = check_aws_id(confs=confs, aws_id=aws_acct_id)
@@ -179,6 +183,7 @@ def build_steps(
             gitsha=gitsha[0:10] 
                 if env in {'dev', 'qa', } 
                 else str(),
+            pbargs=pbargs,
             tag=tagged
         )
     else:
@@ -191,8 +196,8 @@ def proc_conf(path: str, env: str) -> None:
         img_name, registry = conf['image_name'], conf['container_registry']      
         return Forger(
             base_img_used=conf.get('base_image_used'),
-            buildargs=conf.get('buildargs'),
             build_it=conf.get(f'build_{env}'),
+            conf_buildargs=conf.get('buildargs'),
             gcp_proj_id=conf.get('gcp_project_id'),
             registry=registry,
             repo=conf.get('container_repo'),
@@ -205,6 +210,7 @@ def build_an_image(
     env: str,
     aws_acct_id: str=str(),
     gitsha: str=str(),
+    passed_in_bargs: dict=dict()
 ) -> None:
     confs = proc_conf(f'{dir}/{FORGE}', env)
     build_steps(
@@ -212,7 +218,8 @@ def build_an_image(
         env,
         dir,
         aws_acct_id,
-        gitsha
+        gitsha,
+        passed_in_bargs
     )
 
 
@@ -220,14 +227,16 @@ def build_images(
     root_dir: str,
     env: str,
     aws_acct_id: str=str(),
-    gitsha: str=str()
+    gitsha: str=str(),
+    passed_in_bargs: dict=dict()
 ) -> None:
     for dir in os.listdir(root_dir):
         build_an_image(
             f'{root_dir}/{dir}',
             env,
             aws_acct_id,
-            gitsha
+            gitsha,
+            passed_in_bargs
         )
 
 

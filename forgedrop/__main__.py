@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import os
 import pkgutil
 
@@ -15,12 +16,35 @@ def dockerfiler(args: argparse) -> None:
     dockerfile(args.where)
 
 
+def handle_buildargs(bargs: str) -> dict:
+
+    def is_json(value: str) -> bool:
+        try:
+            json.loads(value)
+        except (ValueError, TypeError):
+            return False
+        return True
+    
+    if bargs:
+        if is_json(bargs):
+            return json \
+                .loads(
+                    bargs
+                )
+    else:
+        return dict()
+
+
 def image(args: argparse) -> None:
     build_an_image(
         aws_acct_id=args.aws_acct_id,
         dir=args.where.replace('~', expanduser('~')),
         env=args.env,
-        gitsha=args.gitsha
+        gitsha=args.gitsha,
+        passed_in_bargs=
+            handle_buildargs(
+                args.buildargs
+            )
     )
 
 
@@ -29,6 +53,10 @@ def images(args: argparse) -> None:
         aws_acct_id=args.aws_acct_id,
         env=args.env,
         gitsha=args.gitsha,
+        passed_in_bargs=
+            handle_buildargs(
+                args.buildargs
+            ),
         root_dir=args.parent_dir
     )
 
@@ -71,12 +99,14 @@ def args(what: str) -> list:
     dockerfile = ['--where', ]
     image = [
         '--aws-acct-id',
+        '--buildargs',
         '--env',
         '--gitsha',
         '--where', 
     ]
     images = [
         '--aws-acct-id',
+        '--buildargs',
         '--env',
         '--gitsha',
         '--parent-dir',         
@@ -93,7 +123,7 @@ def args(what: str) -> list:
     )[what]
 
 
-OPTIONALS = {'--aws-acct-id', '--gitsha', }
+OPTIONALS = {'--aws-acct-id', '--buildargs', '--gitsha', }
 CALLABLES = dict(
     dockerfile=dockerfiler,
     image=image,
