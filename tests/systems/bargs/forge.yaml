@@ -3,7 +3,7 @@ buildargs:
   _A_: '1'
   _B_: '2'
   _C_: '3'
-build_dev: true
+build_dev: false
 build_qa: false
 build_prod: false
 base_image_used: python:3.10.4-slim
