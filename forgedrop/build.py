@@ -5,7 +5,6 @@ import os
 import yaml
 
 from collections import namedtuple
-from copy import deepcopy
 from distutils.version import StrictVersion
 from json.decoder import JSONDecodeError
 from subprocess import Popen, CalledProcessError
