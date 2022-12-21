@@ -32,11 +32,20 @@ jobs:
         username: _json_key
         password: ${{ secrets.GCP_CREDS }}
 
+    - name: Build & Push Test Many Dev
+      if: github.event_name == 'push'
+      run: >
+        forge images
+        --buildargs '{"_NINJATO_": "0", "_JELLY_": "1", "_PB_": "2"}'
+        --env dev
+        --gitsha ${{ github.sha }}
+        --parent-dir $TESTS/manybargs
+
     - name: Build & Push Test Dev
       if: github.event_name == 'push'
       run: >
         forge image
-        --buildargs '{"_PBJ_": "0", "_JELL_": "1"}'
+        --buildargs '{"_JELLY_": "0", "_PB_": "1"}'
         --env dev
         --gitsha ${{ github.sha }}
         --where $TESTS/bargs

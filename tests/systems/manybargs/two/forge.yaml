@@ -1,0 +1,13 @@
+name: bargusone
+buildargs:
+  _FRUIT_: '1'
+  _NINJATO_: '2'
+build_dev: true
+build_qa: false
+build_prod: false
+base_image_used: python:3.10.4-slim
+container_registry: us-central1-docker.pkg.dev
+container_repo: containerbean
+gcp_project_id: willemworld
+image_name: bargustwo-0.0.0
+region: us-central1
