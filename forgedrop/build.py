@@ -112,7 +112,10 @@ def dockerit(
     gitsha: str=str(),
     pbargs: dict=dict()
 ) -> None:
-    bargs=confs.buildargs if confs.buildargs else dict()
+    bargs = (
+        confs.conf_buildargs if confs.conf_buildargs 
+        else dict()
+    )
     bargs.update(pbargs)    
     result = push(
         built = build(
@@ -208,7 +211,7 @@ def build_an_image(
     env: str,
     aws_acct_id: str=str(),
     gitsha: str=str(),
-    passed_in_buildargs: dict=dict()
+    passed_in_bargs: dict=dict()
 ) -> None:
     confs = proc_conf(f'{dir}/{FORGE}', env)
     build_steps(
@@ -217,7 +220,7 @@ def build_an_image(
         dir,
         aws_acct_id,
         gitsha,
-        passed_in_buildargs
+        passed_in_bargs
     )
 
 
@@ -226,7 +229,7 @@ def build_images(
     env: str,
     aws_acct_id: str=str(),
     gitsha: str=str(),
-    passed_in_buildargs: dict=dict()
+    passed_in_bargs: dict=dict()
 ) -> None:
     for dir in os.listdir(root_dir):
         build_an_image(
@@ -234,7 +237,7 @@ def build_images(
             env,
             aws_acct_id,
             gitsha,
-            passed_in_buildargs
+            passed_in_bargs
         )
 
 

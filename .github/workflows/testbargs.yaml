@@ -36,6 +36,7 @@ jobs:
       if: github.event_name == 'push'
       run: >
         forge image
+        --buildargs '{"_PBJ_": "0", "_JELL_": "1"}'
         --env dev
         --gitsha ${{ github.sha }}
-        --where $TESTS/buildargs
+        --where $TESTS/bargs
